@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -15,8 +15,8 @@
       "name": "goal",
       "npm": "@pify/goal",
       "repo": "https://github.com/pifydev/goal",
-      "description": "Pin a session goal and keep the agent anchored to it",
-      "status": "planned"
+      "description": "Pin a session goal and keep the agent anchored to it: settled-idle continuation with safety limits",
+      "status": "published"
     },
     {
       "name": "memory",
