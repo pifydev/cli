@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -29,8 +29,8 @@
       "name": "plan-mode",
       "npm": "@pify/plan-mode",
       "repo": "https://github.com/pifydev/plan-mode",
-      "description": "Read-only planning mode with an explicit approve-then-execute gate",
-      "status": "planned"
+      "description": "Read-only planning mode with an enforced approve-then-execute gate: tool policy, plan files, fresh-session handoff",
+      "status": "published"
     },
     {
       "name": "pretty",
