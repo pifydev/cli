@@ -1,0 +1,60 @@
+{
+  "name": "@pify/cli",
+  "version": "0.1.0",
+  "description": "Front door for the Pify suite - install and update the pi coding agent and the @pify/* packages",
+  "keywords": [
+    "pify",
+    "pi",
+    "pi-coding-agent",
+    "cli",
+    "ai",
+    "coding-agent",
+    "extensions"
+  ],
+  "homepage": "https://github.com/pifydev/cli#readme",
+  "bugs": {
+    "url": "https://github.com/pifydev/cli/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pifydev/cli.git"
+  },
+  "license": "MIT",
+  "author": "pifydev",
+  "type": "module",
+  "bin": {
+    "pify": "dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "catalog.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
+    "test": "node --test test/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
