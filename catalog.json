@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -8,8 +8,8 @@
       "name": "btw",
       "npm": "@pify/btw",
       "repo": "https://github.com/pifydev/btw",
-      "description": "By-the-way notes: capture asides during a session without derailing the agent",
-      "status": "planned"
+      "description": "By-the-way side conversations: a read-only, codebase-aware side agent in a widget",
+      "status": "published"
     },
     {
       "name": "goal",
