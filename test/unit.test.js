@@ -115,10 +115,14 @@ test("resolveInstallTarget: catalog names, escape hatch, refusals", () => {
   const catalog = loadBundledCatalog();
 
   // Short names of planned packages are refused with NOT_FOUND.
+  const planned = catalog.packages.find((p) => p.status === "planned");
+  assert.ok(planned, "catalog still has at least one planned package");
   assert.throws(
-    () => resolveInstallTarget(catalog, "goal"),
+    () => resolveInstallTarget(catalog, planned.name),
     (err) => err instanceof PifyError && err.code === ExitCode.NOT_FOUND,
   );
+  // Published short names resolve.
+  assert.equal(resolveInstallTarget(catalog, "goal").npm, "@pify/goal");
   // Unknown short names too.
   assert.throws(
     () => resolveInstallTarget(catalog, "does-not-exist"),
