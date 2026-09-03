@@ -92,6 +92,29 @@ export function runInherit(command: string, args: string[]): Promise<number> {
 }
 
 /**
+ * Run one of pi's official installer one-liners, exactly as documented at
+ * pi.dev, with inherited stdio (they are interactive TUIs).
+ *
+ * SECURITY: this bypasses assertSafeArg because the command lines are fixed
+ * constants defined in pi.ts — no user input ever reaches this function.
+ * Keep it that way: any parameterization must go through spawnPlan instead.
+ */
+export function runOfficialInstaller(kind: "windows" | "posix"): Promise<number> {
+  const [cmd, argv] =
+    kind === "windows"
+      ? ([
+          "powershell",
+          ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "irm https://pi.dev/install.ps1 | iex"],
+        ] as const)
+      : (["sh", ["-c", "curl -fsSL https://pi.dev/install.sh | sh"]] as const);
+  return new Promise((resolve, reject) => {
+    const child = spawn(cmd, argv, { stdio: "inherit", windowsHide: false });
+    child.on("error", reject);
+    child.on("close", (code) => resolve(code ?? 1));
+  });
+}
+
+/**
  * Absolute path of a command on PATH, or null. In-process scan (no child
  * process): PATHEXT-aware on Windows, executable-bit check on POSIX.
  */

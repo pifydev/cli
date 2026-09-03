@@ -26,10 +26,15 @@ const COMMANDS: Command[] = [
     options: {
       force: { type: "boolean", default: false },
       "pi-version": { type: "string" },
+      installer: { type: "boolean", default: false },
     },
     allowPositionals: false,
     run: (_p, v) =>
-      setup({ force: Boolean(v.force), piVersion: v["pi-version"] as string | undefined }),
+      setup({
+        force: Boolean(v.force),
+        piVersion: v["pi-version"] as string | undefined,
+        installer: Boolean(v.installer),
+      }),
   },
   {
     name: "install",

@@ -21,6 +21,7 @@ npx @pify/cli setup
 ```
 pify setup                 # install the pi coding agent (safe to re-run)
 pify setup --pi-version 0.84.4   # pin the version your team has tested
+pify setup --installer     # run pi's official interactive installer (ps1/sh)
 pify list                  # show the @pify catalog with install state
 pify install goal task     # short names resolve to @pify/goal, @pify/task
 pify install goal -l -a    # project scope, pre-approved (CI-friendly)
@@ -37,7 +38,7 @@ Every command supports `--help`; `install`/`remove`/`update` support `--dry-run`
 
 `pify` deliberately does **not** replace pi's package manager. Every package operation delegates to `pi install` / `pi remove` / `pi update`, which own `~/.pi/agent/settings.json` and the extension npm workspace — pify never edits pi's settings. What `pify` adds:
 
-- **Bootstrap** — `pi update` can't run when pi isn't installed yet; `pify setup` closes that gap (`npm install -g --ignore-scripts @earendil-works/pi-coding-agent`, matching pi's own self-update invocation).
+- **Bootstrap** — `pi update` can't run when pi isn't installed yet; `pify setup` closes that gap with the same invocation as pi's official installers (`npm install -g --ignore-scripts --min-release-age=0 --no-fund --no-audit`), falling back to `bun add -g --ignore-scripts` when npm is absent and to `--prefix ~/.local` on POSIX when npm's global prefix is not writable (never sudo). `pify setup --installer` hands off to the official interactive installer (`install.ps1` on Windows, `install.sh` on Unix), which can bootstrap Node and Git Bash too.
 - **Catalog** — `@pify/*` short names, discovery (including packages that are planned but not yet published), and install state at a glance.
 - **One-pass update** — `pify update` chains pi's self-update with per-package updates of everything from this org, without touching non-Pify packages you manage separately.
 - **Doctor** — environment sanity checks for support requests.

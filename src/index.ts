@@ -23,6 +23,8 @@ export {
   installedVersionOnDisk,
   agentDir,
   compareSemver,
+  npmInstallPiArgs,
+  officialInstallerCommand,
   PI_PACKAGE,
   NODE_FLOOR,
   TESTED_PI_VERSION,

@@ -64,15 +64,21 @@ settings. Anything beyond these commands is pi's job: run pi --help.
 
 const COMMAND_HELP: Record<string, string> = {
   setup: `Usage:
-  pify setup [--force] [--pi-version <version>]
+  pify setup [--force] [--pi-version <version>] [--installer]
 
-Install the pi coding agent globally via npm. Safe to re-run; reports status
-when pi is already installed. Updates of an existing pi are pi's own job:
-run pify update pi.
+Install the pi coding agent. Safe to re-run; reports status when pi is
+already installed. Uses the same npm invocation as pi's official installers
+(--ignore-scripts --min-release-age=0), falls back to bun when npm is
+absent, and to --prefix ~/.local on POSIX when npm's global prefix is not
+writable (never sudo). Updates of an existing pi are pi's own job: run
+pify update pi.
 
 Options:
       --force                Reinstall pi even if it is already installed
       --pi-version <version> Install an exact pi version (may downgrade)
+      --installer            Run pi's official interactive installer for
+                             this OS (can bootstrap Node and Git Bash;
+                             needs a terminal, refuses in CI)
 
 Examples:
   # Bootstrap a bare machine
@@ -80,6 +86,9 @@ Examples:
 
   # Pin the version your team has tested
   pify setup --pi-version 0.84.4
+
+  # Full native experience (Windows: install.ps1, Unix: install.sh)
+  pify setup --installer
 `,
   install: `Usage:
   pify install <name...> [-l] [-a] [--dry-run]

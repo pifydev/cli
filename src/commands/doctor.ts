@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { isOffline, runCapture, which } from "../exec.js";
+import { isOffline, isWindows, runCapture, which } from "../exec.js";
 import {
   piStatus,
   fetchLatestPiVersion,
@@ -57,6 +57,16 @@ export async function doctor(opts: DoctorOptions): Promise<number> {
     gitPath ? "ok" : "warn",
     gitPath ?? "git not found - pi's git: package sources will not work",
   );
+
+  // 3b. bash on Windows: pi's bash tool requires Git Bash there.
+  if (isWindows) {
+    const bashPath = which("bash");
+    push(
+      "bash",
+      bashPath ? "ok" : "warn",
+      bashPath ?? "bash not found - pi needs Git Bash on Windows; run pify setup --installer",
+    );
+  }
 
   // 4. pi
   const pi = piStatus();

@@ -1,9 +1,9 @@
-import { readFileSync, realpathSync } from "node:fs";
+import { accessSync, constants, readFileSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { isOffline, isWindows, runCapture, runInherit, which } from "./exec.js";
 import { environmentError, PifyError, ExitCode } from "./errors.js";
-import { step, success } from "./ui.js";
+import { hint, step, success } from "./ui.js";
 import { VERSION } from "./version.js";
 
 /** The npm package that provides the `pi` binary. */
@@ -112,45 +112,151 @@ export function guardNpmManaged(binPath: string): void {
   }
 }
 
+/** The official installer one-liner for this OS, for hints and --installer. */
+export function officialInstallerCommand(): string {
+  return isWindows
+    ? 'powershell -c "irm https://pi.dev/install.ps1 | iex"'
+    : "curl -fsSL https://pi.dev/install.sh | sh";
+}
+
+/** Walk up from a path to its first existing ancestor; writable directory? */
+function writableOrCreatable(path: string): boolean {
+  let current = path;
+  for (;;) {
+    try {
+      statSync(current);
+      break;
+    } catch {
+      const parent = dirname(current);
+      if (parent === current) return false;
+      current = parent;
+    }
+  }
+  try {
+    if (!statSync(current).isDirectory()) return false;
+    accessSync(current, constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Install pi globally via npm. This is the one operation pi cannot do for
- * itself — `pi update --self` requires a working pi. `--ignore-scripts`
- * matches pi's own self-update invocation (supply-chain-safe default).
+ * The npm install argv pi's official installers use:
+ * `--ignore-scripts` (supply-chain-safe; matches pi's self-update),
+ * `--min-release-age=0` (pi ships npm-shrinkwrap.json, so bypassing npm's
+ * release-age gate does not reopen transitive ranges; npm >= 11 only),
+ * `--no-fund --no-audit` (noise). Exported for tests.
+ */
+export function npmInstallPiArgs(spec: string, npmMajor: number, prefix?: string): string[] {
+  const args = ["install", "-g", "--ignore-scripts"];
+  if (npmMajor >= 11) args.push("--min-release-age=0");
+  args.push("--no-fund", "--no-audit");
+  if (prefix) args.push("--prefix", prefix);
+  args.push(spec);
+  return args;
+}
+
+function npmMajorVersion(): number {
+  const res = runCapture("npm", ["--version"]);
+  const major = Number.parseInt(res.stdout.trim().split(".")[0] ?? "", 10);
+  return Number.isNaN(major) ? 0 : major;
+}
+
+/**
+ * Install pi with the same decisions as pi's official installers, minus the
+ * interactive parts. This is the one operation pi cannot do for itself —
+ * `pi update` requires a working pi.
+ *
+ * Per-OS behavior (ported from install.sh / install.ps1):
+ * - POSIX, npm prefix unwritable, no global pi there: fall back to
+ *   `--prefix ~/.local` — never sudo.
+ * - POSIX, npm prefix unwritable but an old global pi lives there: stop
+ *   (a ~/.local copy would be shadowed by the stale global one).
+ * - No npm but bun on PATH: `bun add -g --ignore-scripts` (documented
+ *   alternative channel).
+ * - Neither: point at the official installer, which can bootstrap Node too.
  */
 export async function installPi(version?: string): Promise<void> {
   assertNodeVersion();
-  if (!which("npm")) {
-    throw environmentError(
-      "npm was not found on PATH.",
-      "Install Node.js (which bundles npm) from https://nodejs.org and retry.",
-    );
-  }
   if (process.env.PI_MANAGED_INSTALL_ROOT && !piStatus().installed) {
     throw environmentError(
       "PI_MANAGED_INSTALL_ROOT is set but pi is not installed.",
-      "Use the managed installer: curl -fsSL https://pi.dev/install.sh | sh (Linux/macOS).",
+      `Use the official installer: ${officialInstallerCommand()}`,
     );
   }
+
   const spec = version ? `${PI_PACKAGE}@${version}` : PI_PACKAGE;
-  step(`npm install -g --ignore-scripts ${spec}`);
-  const code = await runInherit("npm", ["install", "-g", "--ignore-scripts", spec]);
+  const npmPath = which("npm");
+  const bunPath = which("bun");
+
+  if (!npmPath && !bunPath) {
+    throw environmentError(
+      "Neither npm nor bun was found on PATH.",
+      `Run the official installer (it can install Node too): ${officialInstallerCommand()}`,
+    );
+  }
+
+  let command: string;
+  let args: string[];
+  let localPrefix: string | null = null;
+
+  if (npmPath) {
+    command = "npm";
+    if (!isWindows) {
+      const prefixRes = runCapture("npm", ["prefix", "-g"]);
+      const prefix = prefixRes.status === 0 ? prefixRes.stdout.trim() : "";
+      const prefixWritable =
+        prefix !== "" &&
+        writableOrCreatable(join(prefix, "lib", "node_modules")) &&
+        writableOrCreatable(join(prefix, "bin"));
+      if (prefix && !prefixWritable) {
+        let staleGlobalPi = false;
+        try {
+          statSync(join(prefix, "bin", "pi"));
+          staleGlobalPi = true;
+        } catch {
+          // no global pi there
+        }
+        if (staleGlobalPi) {
+          // A ~/.local copy would be shadowed by the stale global install.
+          throw environmentError(
+            `npm's global directory is not writable (${prefix}) and pi is already installed there.`,
+            `Update or remove it first: sudo npm install -g --ignore-scripts ${PI_PACKAGE}`,
+          );
+        }
+        localPrefix = join(homedir(), ".local");
+      }
+    }
+    args = npmInstallPiArgs(spec, npmMajorVersion(), localPrefix ?? undefined);
+  } else {
+    command = "bun";
+    args = ["add", "-g", "--ignore-scripts", spec];
+  }
+
+  step(`${command} ${args.join(" ")}`);
+  const code = await runInherit(command, args);
   if (code !== 0) {
     throw new PifyError(
-      `npm install -g ${spec} exited with code ${code}.`,
+      `${command} ${args[0]} exited with code ${code}.`,
       ExitCode.SUBPROCESS,
       isWindows
         ? "If this is a permissions or file-lock error, close running pi sessions and retry from an elevated terminal."
-        : "If this is an EACCES error, configure a user-writable npm prefix (https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) or use a Node version manager.",
+        : `If the problem persists, try the official installer: ${officialInstallerCommand()}`,
     );
   }
+
   const st = piStatus();
   if (!st.installed) {
-    throw environmentError(
-      "pi was installed but is not resolvable on PATH.",
-      "Add npm's global prefix to PATH (npm prefix -g) and open a new terminal.",
-    );
+    const pathHint = localPrefix
+      ? `Add ${join(localPrefix, "bin")} to PATH and open a new terminal.`
+      : "Add the global bin directory to PATH (npm prefix -g) and open a new terminal.";
+    throw environmentError("pi was installed but is not resolvable on PATH.", pathHint);
   }
   success(`pi ${st.version ?? ""} installed.`.replace("  ", " "));
+  if (localPrefix) {
+    hint(`Installed under ${localPrefix} because npm's global prefix is not writable.`);
+  }
 }
 
 /**

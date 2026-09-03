@@ -4,25 +4,36 @@ import {
   compareSemver,
   installPi,
   guardNpmManaged,
-  assertNodeVersion,
+  officialInstallerCommand,
 } from "../pi.js";
-import { environmentError } from "../errors.js";
-import { which } from "../exec.js";
-import { out, success, hint, style } from "../ui.js";
+import { environmentError, PifyError, ExitCode } from "../errors.js";
+import { isWindows, runOfficialInstaller } from "../exec.js";
+import { out, success, hint, step, style } from "../ui.js";
 
 export interface SetupOptions {
   force: boolean;
   piVersion?: string;
+  installer: boolean;
 }
 
 /** Install the pi coding agent. Idempotent; the canonical first command. */
 export async function setup(opts: SetupOptions): Promise<number> {
-  assertNodeVersion();
-  if (!which("npm")) {
-    throw environmentError(
-      "npm was not found on PATH.",
-      "Install Node.js (which bundles npm) from https://nodejs.org and retry.",
-    );
+  if (opts.installer) {
+    // Delegate to pi's official interactive installer for this OS. It can
+    // bootstrap Node itself and (on Windows) install Git Bash, which the
+    // non-interactive npm path cannot.
+    if (!process.stdin.isTTY || process.env.CI) {
+      throw environmentError(
+        "The official installer is interactive and needs a terminal.",
+        "In CI, use plain `pify setup` (non-interactive npm path) instead.",
+      );
+    }
+    step(officialInstallerCommand());
+    const code = await runOfficialInstaller(isWindows ? "windows" : "posix");
+    if (code !== 0) {
+      throw new PifyError(`The official installer exited with code ${code}.`, ExitCode.SUBPROCESS);
+    }
+    return 0;
   }
 
   const st = piStatus();

@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   compareSemver,
+  npmInstallPiArgs,
+  officialInstallerCommand,
   loadBundledCatalog,
   validateCatalog,
   parseInstallSpec,
@@ -18,6 +20,34 @@ import {
 test("VERSION matches package.json", async () => {
   const { default: pkg } = await import("../package.json", { with: { type: "json" } });
   assert.equal(VERSION, pkg.version);
+});
+
+test("npmInstallPiArgs mirrors pi's official installer invocation", () => {
+  // npm >= 11 gets --min-release-age=0 (safe: pi ships npm-shrinkwrap.json)
+  assert.deepEqual(npmInstallPiArgs("@earendil-works/pi-coding-agent", 11), [
+    "install", "-g", "--ignore-scripts", "--min-release-age=0",
+    "--no-fund", "--no-audit", "@earendil-works/pi-coding-agent",
+  ]);
+  // older npm rejects the flag, so it must be omitted
+  assert.ok(!npmInstallPiArgs("pkg", 10).includes("--min-release-age=0"));
+  // POSIX unwritable-prefix fallback inserts --prefix before the spec
+  const withPrefix = npmInstallPiArgs("pkg", 11, "/home/u/.local");
+  const at = withPrefix.indexOf("--prefix");
+  assert.equal(withPrefix[at + 1], "/home/u/.local");
+  assert.equal(withPrefix[withPrefix.length - 1], "pkg");
+  // every token must survive the spawn-arg allowlist
+  for (const arg of npmInstallPiArgs("@earendil-works/pi-coding-agent@0.84.4", 11)) {
+    assert.doesNotThrow(() => assertSafeArg(arg), arg);
+  }
+});
+
+test("officialInstallerCommand matches the documented one-liners", () => {
+  const cmd = officialInstallerCommand();
+  if (process.platform === "win32") {
+    assert.match(cmd, /install\.ps1/);
+  } else {
+    assert.match(cmd, /install\.sh/);
+  }
 });
 
 test("compareSemver orders versions", () => {
