@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -36,8 +36,8 @@
       "name": "pretty",
       "npm": "@pify/pretty",
       "repo": "https://github.com/pifydev/pretty",
-      "description": "Prettier TUI rendering for tool calls, diffs, and markdown",
-      "status": "planned"
+      "description": "Compact theme-aware rendering for built-in tools: summaries, highlighted reads, colorized diffs",
+      "status": "published"
     },
     {
       "name": "subagent",
