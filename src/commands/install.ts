@@ -1,64 +1,66 @@
-import { loadCatalog, resolvePackage } from "../catalog.js";
-import { delegate } from "../pi.js";
-import { usageError, notFoundError, PifyError, ExitCode } from "../errors.js";
-import { step, warn } from "../ui.js";
+import { loadCatalog, resolveInstallTarget, type InstallTarget } from "../catalog.js";
+import { delegate, requirePi } from "../pi.js";
+import { usageError, PifyError, ExitCode } from "../errors.js";
+import { out, step, warn } from "../ui.js";
 
 export interface InstallOptions {
   local: boolean;
+  approve: boolean;
+  dryRun: boolean;
+}
+
+function piArgs(target: InstallTarget, opts: InstallOptions): string[] {
+  const spec = target.pin ? `npm:${target.npm}@${target.pin}` : `npm:${target.npm}`;
+  const args = ["install", spec];
+  if (opts.local) args.push("-l");
+  if (opts.approve) args.push("-a");
+  return args;
 }
 
 /**
- * Install one or more @pify packages by delegating to `pi install`.
- * pi owns settings.json and the npm workspace; we only translate names.
+ * Install @pify packages by short name; the install itself is delegated to
+ * `pi install`, which owns the settings write, locking, dedupe, the npm
+ * install into pi's extension root, and the project-trust decision.
  */
 export async function install(names: string[], opts: InstallOptions): Promise<number> {
   if (names.length === 0) {
-    throw usageError("Nothing to install.", "Usage: pify install <package...>   e.g. pify install goal memory");
+    throw usageError("Missing package name.", "Usage: pify install <name...> [-l] [-a]");
   }
 
   const catalog = await loadCatalog();
-  const targets = names.map((n) => resolvePackage(catalog, n));
 
-  const planned = targets.filter((t) => t.status !== "published");
-  if (planned.length > 0) {
-    for (const t of planned) {
-      warn(`${t.npm} is not published yet (${t.repo}).`);
-    }
-    throw notFoundError(
-      `Not yet available on npm: ${planned.map((t) => t.name).join(", ")}`,
-      "Run `pify update --catalog` later to refresh availability.",
-    );
-  }
+  // Resolve every name before doing anything: a typo never leaves a
+  // half-applied multi-install. Throws exit 2/4 on the first bad name.
+  const targets = names.map((name) => resolveInstallTarget(catalog, name));
 
   for (const target of targets) {
-    const source = `npm:${target.npm}`;
-    step(`pi install ${source}${opts.local ? " -l" : ""}`);
-    const args = ["install", source];
-    if (opts.local) args.push("-l");
-    const code = await delegate(args);
-    if (code !== 0) {
-      throw new PifyError(`pi install ${source} exited with code ${code}.`, ExitCode.SUBPROCESS);
+    if (target.explicit && (!target.inCatalog || target.status !== "published")) {
+      // Escape hatch for catalog staleness: a truly unpublished package
+      // degrades to pi/npm's own E404, never a wrong install.
+      warn(`${target.npm} is not in the catalog (or not marked published); installing anyway.`);
     }
   }
-  return 0;
-}
 
-/** Remove installed @pify packages via `pi remove`. */
-export async function remove(names: string[], opts: InstallOptions): Promise<number> {
-  if (names.length === 0) {
-    throw usageError("Nothing to remove.", "Usage: pify remove <package...>");
+  requirePi();
+
+  if (opts.dryRun) {
+    for (const target of targets) out(`pi ${piArgs(target, opts).join(" ")}`);
+    return 0;
   }
-  const catalog = await loadCatalog();
-  for (const name of names) {
-    const target = resolvePackage(catalog, name);
-    const source = `npm:${target.npm}`;
-    step(`pi remove ${source}${opts.local ? " -l" : ""}`);
-    const args = ["remove", source];
-    if (opts.local) args.push("-l");
+
+  const failed: string[] = [];
+  for (const target of targets) {
+    const args = piArgs(target, opts);
+    step(`pi ${args.join(" ")}`);
     const code = await delegate(args);
-    if (code !== 0) {
-      throw new PifyError(`pi remove ${source} exited with code ${code}.`, ExitCode.SUBPROCESS);
-    }
+    if (code !== 0) failed.push(target.shortName);
+  }
+
+  if (failed.length > 0) {
+    throw new PifyError(
+      `Installed ${targets.length - failed.length} of ${targets.length}; failed: ${failed.join(", ")}`,
+      ExitCode.SUBPROCESS,
+    );
   }
   return 0;
 }

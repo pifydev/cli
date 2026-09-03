@@ -1,15 +1,15 @@
 {
   "name": "@pify/cli",
   "version": "0.1.0",
-  "description": "Front door for the Pify suite - install and update the pi coding agent and the @pify/* packages",
+  "description": "Front door for the Pify suite: install and update the pi coding agent, manage @pify packages, and scaffold Pi Packages",
   "keywords": [
     "pify",
     "pi",
     "pi-coding-agent",
     "cli",
-    "ai",
     "coding-agent",
-    "extensions"
+    "extensions",
+    "scaffolding"
   ],
   "homepage": "https://github.com/pifydev/cli#readme",
   "bugs": {
@@ -20,7 +20,7 @@
     "url": "git+https://github.com/pifydev/cli.git"
   },
   "license": "MIT",
-  "author": "pifydev",
+  "author": "Pify maintainers",
   "type": "module",
   "bin": {
     "pify": "dist/cli.js"
@@ -46,7 +46,7 @@
     "typecheck": "tsc --noEmit",
     "pretest": "npm run build",
     "test": "node --test test/*.test.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && npm run typecheck"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
@@ -54,7 +54,6 @@
     "typescript": "^5.7.2"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   }
 }

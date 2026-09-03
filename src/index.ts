@@ -1,19 +1,34 @@
 /**
  * Programmatic surface of @pify/cli. The binary lives in cli.ts;
- * this module is for tooling that wants the same primitives.
+ * this module is for org tooling and tests that want the same primitives.
  */
-export { loadCatalog, loadBundledCatalog, resolvePackage } from "./catalog.js";
-export type { Catalog, CatalogPackage } from "./catalog.js";
+export { VERSION } from "./version.js";
+export {
+  loadCatalog,
+  loadBundledCatalog,
+  refreshCatalog,
+  validateCatalog,
+  parseInstallSpec,
+  resolveInstallTarget,
+  resolvePifyName,
+} from "./catalog.js";
+export type { Catalog, CatalogPackage, InstallSpec, InstallTarget } from "./catalog.js";
 export {
   piStatus,
+  fetchLatestPiVersion,
   installPi,
   updatePi,
   readSettings,
-  installedSources,
+  installedPifyPackages,
+  installedVersionOnDisk,
+  agentDir,
   compareSemver,
   PI_PACKAGE,
   NODE_FLOOR,
+  TESTED_PI_VERSION,
 } from "./pi.js";
-export { assertSafeArg } from "./exec.js";
-export type { PiStatus, PiSettings } from "./pi.js";
+export type { PiStatus, PiSettings, InstalledPifyPackage } from "./pi.js";
+export { assertSafeArg, which, isOffline } from "./exec.js";
+export { interpolate, packageJsonTemplate, INDEX_TS, README_MD } from "./templates.js";
+export type { TemplateVars } from "./templates.js";
 export { PifyError, ExitCode } from "./errors.js";

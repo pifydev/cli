@@ -1,77 +1,77 @@
 /**
- * Terminal output. Colors follow the informal cross-tool contract:
- * NO_COLOR disables, FORCE_COLOR overrides, otherwise require a TTY.
+ * Terminal output. Color follows chalk-5 semantics, computed per stream:
+ * FORCE_COLOR (non-0) wins, then NO_COLOR / TERM=dumb disable, then TTY.
+ * Results and progress go to stdout; warnings and errors go to stderr.
  */
 
-function detectColor(): boolean {
+function detectColor(stream: NodeJS.WriteStream): boolean {
   const { NO_COLOR, FORCE_COLOR, TERM } = process.env;
   if (FORCE_COLOR !== undefined && FORCE_COLOR !== "0") return true;
   if (NO_COLOR !== undefined && NO_COLOR !== "") return false;
   if (TERM === "dumb") return false;
-  return Boolean(process.stdout.isTTY);
+  return Boolean(stream.isTTY);
 }
 
-let colorEnabled = detectColor();
+let stdoutColor = detectColor(process.stdout);
+let stderrColor = detectColor(process.stderr);
 
 /** Used by the --no-color flag, which must win over auto-detection. */
 export function setColor(enabled: boolean): void {
-  colorEnabled = enabled;
+  stdoutColor = enabled;
+  stderrColor = enabled;
 }
 
-const wrap =
-  (open: string, close: string) =>
-  (s: string): string =>
-    colorEnabled ? `[${open}m${s}[${close}m` : s;
+type Paint = (s: string) => string;
 
-export const style = {
-  bold: wrap("1", "22"),
-  dim: wrap("2", "22"),
-  red: wrap("31", "39"),
-  green: wrap("32", "39"),
-  yellow: wrap("33", "39"),
-  blue: wrap("34", "39"),
-  magenta: wrap("35", "39"),
-  cyan: wrap("36", "39"),
-};
-
-/** Diagnostics go to stderr so `pify list` etc. stay pipeable. */
-export function info(msg: string): void {
-  process.stderr.write(`${msg}\n`);
+function palette(enabled: () => boolean): Record<
+  "bold" | "dim" | "red" | "green" | "yellow" | "cyan",
+  Paint
+> {
+  const wrap =
+    (open: string, close: string): Paint =>
+    (s) =>
+      enabled() ? `[${open}m${s}[${close}m` : s;
+  return {
+    bold: wrap("1", "22"),
+    dim: wrap("2", "22"),
+    red: wrap("31", "39"),
+    green: wrap("32", "39"),
+    yellow: wrap("33", "39"),
+    cyan: wrap("36", "39"),
+  };
 }
 
-export function step(msg: string): void {
-  process.stderr.write(`${style.cyan("›")} ${msg}\n`);
-}
+/** Styles gated on stdout (results, progress, help). */
+export const style = palette(() => stdoutColor);
+/** Styles gated on stderr (warnings, errors). */
+export const estyle = palette(() => stderrColor);
 
-export function success(msg: string): void {
-  process.stderr.write(`${style.green("✓")} ${msg}\n`);
-}
-
-export function warn(msg: string): void {
-  process.stderr.write(`${style.yellow("!")} ${msg}\n`);
-}
-
-export function error(msg: string): void {
-  process.stderr.write(`${style.red("✗")} ${msg}\n`);
-}
-
-/** Data output goes to stdout. */
+/** Result / status line to stdout. */
 export function out(msg = ""): void {
   process.stdout.write(`${msg}\n`);
 }
 
-export function isInteractive(): boolean {
-  return Boolean(process.stdin.isTTY && process.stdout.isTTY) && !process.env.CI;
+/** Dim `$ <command>` line preceding a delegated child process. */
+export function step(command: string): void {
+  process.stdout.write(`${style.dim(`$ ${command}`)}\n`);
 }
 
-/** Left-pad a two-column table to a consistent gutter. */
-export function table(rows: Array<[string, string]>, indent = "  "): string {
-  const width = rows.reduce((max, [left]) => Math.max(max, left.length), 0);
-  return rows
-    .map(([left, right]) =>
-      right
-        ? `${indent}${left.padEnd(width)}  ${style.dim(right)}`
-        : `${indent}${left}`,
-    )
-    .join("\n");
+export function success(msg: string): void {
+  process.stdout.write(`${style.green(msg)}\n`);
+}
+
+export function hint(msg: string): void {
+  process.stdout.write(`${style.dim(msg)}\n`);
+}
+
+export function warn(msg: string): void {
+  process.stderr.write(`${estyle.yellow(`Warning: ${msg}`)}\n`);
+}
+
+export function error(msg: string): void {
+  process.stderr.write(`${estyle.red(`Error: ${msg}`)}\n`);
+}
+
+export function errorHint(msg: string): void {
+  process.stderr.write(`${estyle.dim(msg)}\n`);
 }

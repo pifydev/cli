@@ -1,110 +1,177 @@
-import { parseArgs } from "node:util";
-import { createRequire } from "node:module";
+import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { setup } from "./commands/setup.js";
-import { install, remove } from "./commands/install.js";
-import { list } from "./commands/list.js";
+import { install } from "./commands/install.js";
+import { remove } from "./commands/remove.js";
 import { update } from "./commands/update.js";
+import { list } from "./commands/list.js";
 import { doctor } from "./commands/doctor.js";
+import { init } from "./commands/init.js";
+import { mainHelp, commandHelp } from "./help.js";
 import { PifyError, ExitCode, usageError } from "./errors.js";
-import { error, info, out, setColor, style } from "./ui.js";
+import { error, errorHint, out, setColor } from "./ui.js";
+import { VERSION } from "./version.js";
 
-const require = createRequire(import.meta.url);
-const { version: VERSION } = require("../package.json") as { version: string };
+interface Command {
+  name: string;
+  aliases: string[];
+  options: ParseArgsOptionsConfig;
+  allowPositionals: boolean;
+  run(positionals: string[], values: Record<string, unknown>): Promise<number>;
+}
 
-const HELP = `${style.bold("pify")} — front door for the Pify suite ${style.dim(`v${VERSION}`)}
-
-${style.bold("Usage:")}
-  pify <command> [options]
-
-${style.bold("Commands:")}
-  setup                 Install the pi coding agent (no-op if already installed)
-  install <package...>  Install @pify packages           ${style.dim("pify install goal memory")}
-  remove <package...>   Remove @pify packages            ${style.dim("pify remove goal")}
-  update [target...]    Update pi and installed packages ${style.dim("pify update · pify update pi")}
-  list                  Show the @pify package catalog with install state
-  doctor                Diagnose the local pi/pify environment
-
-${style.bold("Options:")}
-  -l, --local           Install/remove in project scope (.pi/settings.json)
-      --catalog         With update: refresh the package catalog only
-      --force           With setup: reinstall pi even if present
-      --no-color        Disable colored output (NO_COLOR is also respected)
-  -h, --help            Show this help
-  -v, --version         Show version
-
-${style.bold("Examples:")}
-  npx @pify/cli setup            ${style.dim("# bootstrap pi without installing pify")}
-  pify install goal plan-mode    ${style.dim("# short names resolve to @pify/*")}
-  pify update                    ${style.dim("# update pi + all installed @pify packages")}
-
-Packages live at ${style.cyan("https://github.com/pifydev")}. Anything beyond the
-commands above is pi's job — run ${style.bold("pi --help")}.
-`;
-
-async function main(argv: string[]): Promise<number> {
-  const { values, positionals } = parseArgs({
-    args: argv,
-    allowPositionals: true,
-    strict: false,
+const COMMANDS: Command[] = [
+  {
+    name: "setup",
+    aliases: [],
+    options: {
+      force: { type: "boolean", default: false },
+      "pi-version": { type: "string" },
+    },
+    allowPositionals: false,
+    run: (_p, v) =>
+      setup({ force: Boolean(v.force), piVersion: v["pi-version"] as string | undefined }),
+  },
+  {
+    name: "install",
+    aliases: ["i", "add"],
     options: {
       local: { type: "boolean", short: "l", default: false },
-      catalog: { type: "boolean", default: false },
-      force: { type: "boolean", default: false },
-      "no-color": { type: "boolean", default: false },
-      help: { type: "boolean", short: "h", default: false },
-      version: { type: "boolean", short: "v", default: false },
+      approve: { type: "boolean", short: "a", default: false },
+      "dry-run": { type: "boolean", default: false },
     },
-  });
+    allowPositionals: true,
+    run: (p, v) =>
+      install(p, {
+        local: Boolean(v.local),
+        approve: Boolean(v.approve),
+        dryRun: Boolean(v["dry-run"]),
+      }),
+  },
+  {
+    name: "remove",
+    aliases: ["rm", "uninstall"],
+    options: {
+      local: { type: "boolean", short: "l", default: false },
+      approve: { type: "boolean", short: "a", default: false },
+      "dry-run": { type: "boolean", default: false },
+    },
+    allowPositionals: true,
+    run: (p, v) =>
+      remove(p, {
+        local: Boolean(v.local),
+        approve: Boolean(v.approve),
+        dryRun: Boolean(v["dry-run"]),
+      }),
+  },
+  {
+    name: "update",
+    aliases: ["up"],
+    options: {
+      catalog: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
+    },
+    allowPositionals: true,
+    run: (p, v) => update(p, { catalogOnly: Boolean(v.catalog), dryRun: Boolean(v["dry-run"]) }),
+  },
+  {
+    name: "list",
+    aliases: ["ls"],
+    options: { json: { type: "boolean", default: false } },
+    allowPositionals: false,
+    run: (_p, v) => list({ json: Boolean(v.json) }),
+  },
+  {
+    name: "doctor",
+    aliases: [],
+    options: { json: { type: "boolean", default: false } },
+    allowPositionals: false,
+    run: (_p, v) => doctor({ json: Boolean(v.json) }),
+  },
+  {
+    name: "init",
+    aliases: [],
+    options: {
+      name: { type: "string" },
+      description: { type: "string" },
+    },
+    allowPositionals: true,
+    run: (p, v) =>
+      init(p[0], {
+        name: v.name as string | undefined,
+        description: v.description as string | undefined,
+      }),
+  },
+];
 
-  if (values["no-color"]) setColor(false);
+async function main(argv: string[]): Promise<number> {
+  // --no-color must win everywhere, including in help output, so peel it
+  // before anything renders.
+  const args = argv.filter((a) => a !== "--no-color");
+  if (args.length !== argv.length) setColor(false);
 
-  if (values.version) {
+  if (args.length === 0) {
+    out(mainHelp());
+    return ExitCode.USAGE;
+  }
+
+  const first = args[0]!;
+  if (first === "-h" || first === "--help") {
+    out(mainHelp());
+    return 0;
+  }
+  if (first === "-v" || first === "--version") {
     out(VERSION);
     return 0;
   }
-
-  const [command, ...rest] = positionals.map(String);
-
-  if (values.help || !command) {
-    out(HELP);
-    return values.help ? 0 : ExitCode.USAGE;
+  if (first.startsWith("-")) {
+    throw usageError(`Unknown option ${first}.`, 'Use "pify --help".');
   }
 
-  switch (command) {
-    case "setup":
-      return setup({ force: Boolean(values.force) });
-    case "install":
-    case "i":
-    case "add":
-      return install(rest, { local: Boolean(values.local) });
-    case "remove":
-    case "rm":
-    case "uninstall":
-      return remove(rest, { local: Boolean(values.local) });
-    case "update":
-    case "up":
-      return update(rest, { catalogOnly: Boolean(values.catalog) });
-    case "list":
-    case "ls":
-      return list();
-    case "doctor":
-      return doctor();
-    default:
-      throw usageError(
-        `Unknown command: ${JSON.stringify(command)}`,
-        "Run `pify --help` to see available commands.",
-      );
+  const command = COMMANDS.find((c) => c.name === first || c.aliases.includes(first));
+  if (!command) {
+    throw usageError(
+      `Unknown command: ${JSON.stringify(first)}`,
+      'Run "pify --help" to see available commands.',
+    );
   }
+
+  const rest = args.slice(1);
+  if (rest.includes("-h") || rest.includes("--help")) {
+    out(commandHelp(command.name));
+    return 0;
+  }
+
+  // Strict per-command parse: unknown flags are usage errors, not surprises.
+  let parsed: { values: Record<string, unknown>; positionals: string[] };
+  try {
+    parsed = parseArgs({
+      args: rest,
+      options: command.options,
+      allowPositionals: command.allowPositionals,
+      strict: true,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const unknown = /Unknown option '(--?[^']+)'/.exec(message)?.[1];
+    throw usageError(
+      unknown ? `Unknown option ${unknown} for "${command.name}".` : message,
+      `Use "pify --help" or "pify ${command.name} --help".`,
+    );
+  }
+
+  return command.run(parsed.positionals, parsed.values);
 }
 
 main(process.argv.slice(2))
   .then((code) => {
+    // Always process.exitCode, never process.exit(0): on Windows, Node can
+    // assert when exit(0) follows a fetch(). Let the event loop drain.
     process.exitCode = code;
   })
   .catch((err: unknown) => {
     if (err instanceof PifyError) {
       error(err.message);
-      if (err.hint) info(`  ${style.dim(err.hint)}`);
+      if (err.hint) errorHint(err.hint);
       process.exitCode = err.code;
     } else {
       error(err instanceof Error ? (err.stack ?? err.message) : String(err));
