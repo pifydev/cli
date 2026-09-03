@@ -1,13 +1,13 @@
 name: Release
 
-# Publish to npm via OIDC trusted publishing when a version tag is pushed:
-#   npm version minor && git push --follow-tags
+# Publish to npm when a version tag is pushed:
+#   npm version patch && git push --follow-tags
 #
-# One-time bootstrap: the FIRST publish must be run locally
-# (npm publish --access public, npm >= 11.5.1), because the Trusted Publisher
-# config lives on the package settings page which only exists after that.
-# Then on npmjs.com: package settings -> Trusted Publisher -> org pifydev,
-# repo cli, workflow release.yml, environment blank.
+# Auth: NPM_TOKEN repo secret (granular access token with read/write on the
+# @pify scope, or a classic Automation token — both bypass OTP in CI).
+# Provenance comes from --provenance + id-token: write on a GitHub-hosted
+# runner. Once the package exists, this can be migrated to OIDC trusted
+# publishing and the token deleted.
 on:
   push:
     tags: ["v*"]
@@ -16,19 +16,20 @@ permissions: {}
 
 jobs:
   publish:
-    runs-on: ubuntu-latest # trusted publishing requires GitHub-hosted runners
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # npm OIDC trusted publishing / automatic provenance
+      id-token: write # npm provenance
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-      - run: npm install -g npm@latest # trusted publishing needs npm >= 11.5.1
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
-      - run: npm publish # OIDC; no NPM_TOKEN, no --provenance flag
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
