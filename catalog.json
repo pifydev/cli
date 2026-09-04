@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 13,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -58,6 +58,13 @@
       "npm": "@pify/task",
       "repo": "https://github.com/pifydev/task",
       "description": "Task tracking with dependency graph, evidence-gated completion, live widget, CC-style reminders",
+      "status": "published"
+    },
+    {
+      "name": "todo",
+      "npm": "@pify/todo",
+      "repo": "https://github.com/pifydev/todo",
+      "description": "Agent working-memory checklist: CC TodoWrite-style complete-replacement, next-item surfacing, live widget",
       "status": "published"
     },
     {
