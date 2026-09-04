@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 12,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -78,8 +78,8 @@
       "name": "yolo",
       "npm": "@pify/yolo",
       "repo": "https://github.com/pifydev/yolo",
-      "description": "One toggle to auto-approve everything, with an undo trail",
-      "status": "planned"
+      "description": "One toggle to auto-approve everything, with an undo trail: three-tier bash guard, file pre-images",
+      "status": "published"
     }
   ]
 }
