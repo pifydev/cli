@@ -57,16 +57,19 @@ pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
 
 | Package | Description |
 |---|---|
-| `@pify/btw` | By-the-way notes: capture asides without derailing the agent |
+| `@pify/ask-question` | Structured questions on built-in dialogs: 1-4 questions, multi-select, Other free-text |
+| `@pify/btw` | By-the-way side conversations: a read-only, codebase-aware side agent |
 | `@pify/goal` | Pin a session goal and keep the agent anchored to it |
 | `@pify/memory` | Persistent memory across pi sessions |
 | `@pify/plan-mode` | Read-only planning mode with approve-then-execute gate |
 | `@pify/pretty` | Prettier TUI rendering for tool calls, diffs, markdown |
 | `@pify/subagent` | Spawn scoped subagents from within a pi session |
 | `@pify/swarm` | Coordinate multiple pi agents working in parallel |
-| `@pify/task` | Track tasks and progress inside pi sessions |
-| `@pify/usage` | Token and cost usage reporting |
-| `@pify/workflow` | Deterministic multi-step agent workflows |
+| `@pify/task` | Task tracking: dependency graph, evidence-gated completion, reminders |
+| `@pify/todo` | Agent working-memory checklist: TodoWrite-style, next-item surfacing |
+| `@pify/usage` | Token and cost reporting: live footer, local-history dashboard |
+| `@pify/workflow` | Deterministic agent orchestration: CC-style workflow scripts |
+| `@pify/worktree` | Safe git-worktree management with safety rails and merge-back |
 | `@pify/yolo` | Auto-approve everything, with an undo trail |
 
 The catalog ships inside the CLI and refreshes (at most daily) from [`catalog.json` on `main`](https://github.com/pifydev/cli/blob/main/catalog.json), so newly published packages appear without a CLI update. A fetched catalog is validated before use — every entry must stay inside the `@pify` scope — and any invalid document is discarded entirely. Overrides: `PIFY_CATALOG_URL` (remote URL), `PIFY_OFFLINE=1` or `PI_OFFLINE=1` (skip all network lookups).
