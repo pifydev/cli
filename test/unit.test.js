@@ -114,11 +114,23 @@ test("parseInstallSpec refuses range pins", () => {
 test("resolveInstallTarget: catalog names, escape hatch, refusals", () => {
   const catalog = loadBundledCatalog();
 
-  // Short names of planned packages are refused with NOT_FOUND.
-  const planned = catalog.packages.find((p) => p.status === "planned");
-  assert.ok(planned, "catalog still has at least one planned package");
+  // Short names of planned packages are refused with NOT_FOUND. The live
+  // catalog may have none left, so test against a synthetic planned entry.
+  const withPlanned = {
+    ...catalog,
+    packages: [
+      ...catalog.packages,
+      {
+        name: "future-pkg",
+        npm: "@pify/future-pkg",
+        repo: "https://github.com/pifydev/future-pkg",
+        description: "not yet published",
+        status: "planned",
+      },
+    ],
+  };
   assert.throws(
-    () => resolveInstallTarget(catalog, planned.name),
+    () => resolveInstallTarget(withPlanned, "future-pkg"),
     (err) => err instanceof PifyError && err.code === ExitCode.NOT_FOUND,
   );
   // Published short names resolve.
