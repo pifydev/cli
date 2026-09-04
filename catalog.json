@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -71,8 +71,8 @@
       "name": "workflow",
       "npm": "@pify/workflow",
       "repo": "https://github.com/pifydev/workflow",
-      "description": "Deterministic multi-step agent workflows for pi",
-      "status": "planned"
+      "description": "Deterministic agent orchestration: CC-style workflow scripts with agent()/parallel()/pipeline()",
+      "status": "published"
     },
     {
       "name": "yolo",
