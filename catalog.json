@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -43,8 +43,8 @@
       "name": "subagent",
       "npm": "@pify/subagent",
       "repo": "https://github.com/pifydev/subagent",
-      "description": "Spawn scoped subagents from within a pi session",
-      "status": "planned"
+      "description": "Spawn scoped subagents: agent_run/agent_result, custom agent types, turn caps and tool allowlists",
+      "status": "published"
     },
     {
       "name": "swarm",
