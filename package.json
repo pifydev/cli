@@ -1,6 +1,6 @@
 {
   "name": "@pify/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Front door for the Pify suite: install and update the pi coding agent, manage @pify packages, and scaffold Pi Packages",
   "keywords": [
     "pify",
