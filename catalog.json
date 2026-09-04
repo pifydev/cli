@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -64,8 +64,8 @@
       "name": "usage",
       "npm": "@pify/usage",
       "repo": "https://github.com/pifydev/usage",
-      "description": "Token and cost usage reporting for pi sessions",
-      "status": "planned"
+      "description": "Token and cost reporting: live footer, /usage dashboard over local session history, zero network",
+      "status": "published"
     },
     {
       "name": "workflow",
