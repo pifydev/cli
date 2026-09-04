@@ -1,9 +1,16 @@
 {
-  "version": 14,
+  "version": 15,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
   "packages": [
+    {
+      "name": "ask-question",
+      "npm": "@pify/ask-question",
+      "repo": "https://github.com/pifydev/ask-question",
+      "description": "CC AskUserQuestion-shaped tool on built-in dialogs: 1-4 questions, multi-select, Other free-text",
+      "status": "published"
+    },
     {
       "name": "btw",
       "npm": "@pify/btw",
