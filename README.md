@@ -34,6 +34,15 @@ pify init my-extension     # scaffold a new Pi Package
 
 Every command supports `--help`; `install`/`remove`/`update` support `--dry-run`; `list`/`doctor` support `--json`.
 
+**Tab completion** — generated from the live command registry (commands, aliases, flags, and package names all complete):
+
+```bash
+eval "$(pify completions bash)"        # bash — add to ~/.bashrc
+eval "$(pify completions zsh)"         # zsh — add to ~/.zshrc
+pify completions fish > ~/.config/fish/completions/pify.fish
+pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
+```
+
 ## How it relates to `pi`
 
 `pify` deliberately does **not** replace pi's package manager. Every package operation delegates to `pi install` / `pi remove` / `pi update`, which own `~/.pi/agent/settings.json` and the extension npm workspace — pify never edits pi's settings. What `pify` adds:

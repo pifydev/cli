@@ -28,6 +28,7 @@ Commands:
   list                   Show the @pify catalog with install state
   doctor                 Diagnose the local pi/pify environment
   init [dir]             Scaffold a new Pi Package
+  completions <shell>    Print a completion script (bash|zsh|fish|powershell)
 
 Short forms:
   i = install, rm = remove, up = update, ls = list
@@ -165,6 +166,23 @@ Options:
 
 Examples:
   pify doctor
+`,
+  completions: `Usage:
+  pify completions <bash|zsh|fish|powershell>
+
+Print a shell completion script generated from the live command registry —
+command names, aliases, flags, and package names all tab-complete.
+
+Examples:
+  # bash / zsh — evaluate at shell startup (add to your rc file)
+  eval "$(pify completions bash)"
+  eval "$(pify completions zsh)"
+
+  # fish
+  pify completions fish > ~/.config/fish/completions/pify.fish
+
+  # PowerShell — add to $PROFILE
+  pify completions powershell | Out-String | Invoke-Expression
 `,
   init: `Usage:
   pify init [dir] [--name <package-name>] [--description <text>]

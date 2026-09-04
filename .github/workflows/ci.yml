@@ -31,6 +31,15 @@ jobs:
           node dist/cli.js list
           node dist/cli.js install --dry-run goal || true
           node dist/cli.js doctor || true
+      - name: Install-test the packed tarball
+        shell: bash
+        run: |
+          npm pack
+          npm install -g ./pify-cli-*.tgz
+          pify --version
+          pify list
+          pify completions bash > /dev/null
+          pify completions powershell > /dev/null
 
   upstream-drift:
     if: github.event_name == 'schedule'

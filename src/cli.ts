@@ -1,4 +1,4 @@
-import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
+import { parseArgs } from "node:util";
 import { setup } from "./commands/setup.js";
 import { install } from "./commands/install.js";
 import { remove } from "./commands/remove.js";
@@ -6,107 +6,55 @@ import { update } from "./commands/update.js";
 import { list } from "./commands/list.js";
 import { doctor } from "./commands/doctor.js";
 import { init } from "./commands/init.js";
+import { generateCompletion } from "./completions.js";
 import { mainHelp, commandHelp } from "./help.js";
+import { COMMAND_SPECS, parseArgsOptionsFor, type CommandSpec } from "./registry.js";
 import { PifyError, ExitCode, usageError } from "./errors.js";
 import { error, errorHint, out, setColor } from "./ui.js";
 import { VERSION } from "./version.js";
 
-interface Command {
-  name: string;
-  aliases: string[];
-  options: ParseArgsOptionsConfig;
-  allowPositionals: boolean;
-  run(positionals: string[], values: Record<string, unknown>): Promise<number>;
-}
+type Runner = (positionals: string[], values: Record<string, unknown>) => Promise<number>;
 
-const COMMANDS: Command[] = [
-  {
-    name: "setup",
-    aliases: [],
-    options: {
-      force: { type: "boolean", default: false },
-      "pi-version": { type: "string" },
-      installer: { type: "boolean", default: false },
-    },
-    allowPositionals: false,
-    run: (_p, v) =>
-      setup({
-        force: Boolean(v.force),
-        piVersion: v["pi-version"] as string | undefined,
-        installer: Boolean(v.installer),
-      }),
+/** Behavior per command; the surface itself lives in registry.ts. */
+const RUNNERS: Record<string, Runner> = {
+  setup: (_p, v) =>
+    setup({
+      force: Boolean(v.force),
+      piVersion: v["pi-version"] as string | undefined,
+      installer: Boolean(v.installer),
+    }),
+  install: (p, v) =>
+    install(p, {
+      local: Boolean(v.local),
+      approve: Boolean(v.approve),
+      dryRun: Boolean(v["dry-run"]),
+    }),
+  remove: (p, v) =>
+    remove(p, {
+      local: Boolean(v.local),
+      approve: Boolean(v.approve),
+      dryRun: Boolean(v["dry-run"]),
+    }),
+  update: (p, v) => update(p, { catalogOnly: Boolean(v.catalog), dryRun: Boolean(v["dry-run"]) }),
+  list: (_p, v) => list({ json: Boolean(v.json) }),
+  doctor: (_p, v) => doctor({ json: Boolean(v.json) }),
+  init: (p, v) =>
+    init(p[0], {
+      name: v.name as string | undefined,
+      description: v.description as string | undefined,
+    }),
+  completions: async (p) => {
+    if (!p[0]) {
+      throw usageError("Missing shell.", "Usage: pify completions <bash|zsh|fish|powershell>");
+    }
+    out(generateCompletion(p[0]));
+    return 0;
   },
-  {
-    name: "install",
-    aliases: ["i", "add"],
-    options: {
-      local: { type: "boolean", short: "l", default: false },
-      approve: { type: "boolean", short: "a", default: false },
-      "dry-run": { type: "boolean", default: false },
-    },
-    allowPositionals: true,
-    run: (p, v) =>
-      install(p, {
-        local: Boolean(v.local),
-        approve: Boolean(v.approve),
-        dryRun: Boolean(v["dry-run"]),
-      }),
-  },
-  {
-    name: "remove",
-    aliases: ["rm", "uninstall"],
-    options: {
-      local: { type: "boolean", short: "l", default: false },
-      approve: { type: "boolean", short: "a", default: false },
-      "dry-run": { type: "boolean", default: false },
-    },
-    allowPositionals: true,
-    run: (p, v) =>
-      remove(p, {
-        local: Boolean(v.local),
-        approve: Boolean(v.approve),
-        dryRun: Boolean(v["dry-run"]),
-      }),
-  },
-  {
-    name: "update",
-    aliases: ["up"],
-    options: {
-      catalog: { type: "boolean", default: false },
-      "dry-run": { type: "boolean", default: false },
-    },
-    allowPositionals: true,
-    run: (p, v) => update(p, { catalogOnly: Boolean(v.catalog), dryRun: Boolean(v["dry-run"]) }),
-  },
-  {
-    name: "list",
-    aliases: ["ls"],
-    options: { json: { type: "boolean", default: false } },
-    allowPositionals: false,
-    run: (_p, v) => list({ json: Boolean(v.json) }),
-  },
-  {
-    name: "doctor",
-    aliases: [],
-    options: { json: { type: "boolean", default: false } },
-    allowPositionals: false,
-    run: (_p, v) => doctor({ json: Boolean(v.json) }),
-  },
-  {
-    name: "init",
-    aliases: [],
-    options: {
-      name: { type: "string" },
-      description: { type: "string" },
-    },
-    allowPositionals: true,
-    run: (p, v) =>
-      init(p[0], {
-        name: v.name as string | undefined,
-        description: v.description as string | undefined,
-      }),
-  },
-];
+};
+
+function findSpec(name: string): CommandSpec | undefined {
+  return COMMAND_SPECS.find((c) => c.name === name || c.aliases.includes(name));
+}
 
 async function main(argv: string[]): Promise<number> {
   // --no-color must win everywhere, including in help output, so peel it
@@ -132,8 +80,8 @@ async function main(argv: string[]): Promise<number> {
     throw usageError(`Unknown option ${first}.`, 'Use "pify --help".');
   }
 
-  const command = COMMANDS.find((c) => c.name === first || c.aliases.includes(first));
-  if (!command) {
+  const spec = findSpec(first);
+  if (!spec) {
     throw usageError(
       `Unknown command: ${JSON.stringify(first)}`,
       'Run "pify --help" to see available commands.',
@@ -142,7 +90,7 @@ async function main(argv: string[]): Promise<number> {
 
   const rest = args.slice(1);
   if (rest.includes("-h") || rest.includes("--help")) {
-    out(commandHelp(command.name));
+    out(commandHelp(spec.name));
     return 0;
   }
 
@@ -151,20 +99,20 @@ async function main(argv: string[]): Promise<number> {
   try {
     parsed = parseArgs({
       args: rest,
-      options: command.options,
-      allowPositionals: command.allowPositionals,
+      options: parseArgsOptionsFor(spec),
+      allowPositionals: spec.positional !== "none",
       strict: true,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const unknown = /Unknown option '(--?[^']+)'/.exec(message)?.[1];
     throw usageError(
-      unknown ? `Unknown option ${unknown} for "${command.name}".` : message,
-      `Use "pify --help" or "pify ${command.name} --help".`,
+      unknown ? `Unknown option ${unknown} for "${spec.name}".` : message,
+      `Use "pify --help" or "pify ${spec.name} --help".`,
     );
   }
 
-  return command.run(parsed.positionals, parsed.values);
+  return RUNNERS[spec.name]!(parsed.positionals, parsed.values);
 }
 
 main(process.argv.slice(2))

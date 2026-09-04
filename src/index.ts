@@ -31,6 +31,14 @@ export {
 } from "./pi.js";
 export type { PiStatus, PiSettings, InstalledPifyPackage } from "./pi.js";
 export { assertSafeArg, which, isOffline } from "./exec.js";
+export { generateCompletion } from "./completions.js";
+export {
+  COMMAND_SPECS,
+  COMPLETION_SHELLS,
+  GLOBAL_FLAGS,
+  parseArgsOptionsFor,
+} from "./registry.js";
+export type { CommandSpec, FlagSpec, CompletionShell } from "./registry.js";
 export { interpolate, packageJsonTemplate, INDEX_TS, README_MD } from "./templates.js";
 export type { TemplateVars } from "./templates.js";
 export { PifyError, ExitCode } from "./errors.js";
