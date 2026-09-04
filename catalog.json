@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -50,8 +50,8 @@
       "name": "swarm",
       "npm": "@pify/swarm",
       "repo": "https://github.com/pifydev/swarm",
-      "description": "Coordinate multiple pi agents working in parallel",
-      "status": "planned"
+      "description": "Coordinate multiple pi agents in parallel: fan-out with auto-routing, concurrency queue, aggregated reports",
+      "status": "published"
     },
     {
       "name": "task",
