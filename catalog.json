@@ -1,5 +1,5 @@
 {
-  "version": 8,
+  "version": 9,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -57,8 +57,8 @@
       "name": "task",
       "npm": "@pify/task",
       "repo": "https://github.com/pifydev/task",
-      "description": "Track tasks and progress inside pi sessions",
-      "status": "planned"
+      "description": "Task tracking with dependency graph, evidence-gated completion, live widget, CC-style reminders",
+      "status": "published"
     },
     {
       "name": "usage",
