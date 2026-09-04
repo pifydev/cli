@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -79,6 +79,13 @@
       "npm": "@pify/workflow",
       "repo": "https://github.com/pifydev/workflow",
       "description": "Deterministic agent orchestration: CC-style workflow scripts with agent()/parallel()/pipeline()",
+      "status": "published"
+    },
+    {
+      "name": "worktree",
+      "npm": "@pify/worktree",
+      "repo": "https://github.com/pifydev/worktree",
+      "description": "Safe git-worktree management: create/list/merge/remove with safety rails, no shell interpolation",
       "status": "published"
     },
     {
