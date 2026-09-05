@@ -78,7 +78,7 @@
       "name": "usage",
       "npm": "@pify/usage",
       "repo": "https://github.com/pifydev/usage",
-      "description": "Token and cost reporting: live footer, /usage dashboard over local session history, zero network",
+      "description": "Token and cost reporting: live footer, local-history dashboard with per-project costs, opt-in provider quota",
       "status": "published"
     },
     {
