@@ -4,7 +4,9 @@
  * (pattern from oh-my-pi's setup-npm-trust). The npm website makes you do this
  * by hand per package; this drives `npm trust github` over the whole suite.
  *
- * Run LOCALLY (npm trust is interactive — web 2FA), never in CI:
+ * Run LOCALLY, never in CI. `npm trust` publishes-level auth, so you must be
+ * logged in first — that step is a browser 2FA flow and cannot be scripted:
+ *   npm login
  *   node scripts/setup-npm-trust.mjs [--dry-run]
  *
  * After every package reports trusted, the org-level NPM_TOKEN secret can be
@@ -18,6 +20,7 @@ const ORG = "pifydev";
 const WORKFLOW = "release.yml";
 const PACKAGES = [
   ["@pify/cli", "cli"],
+  ["@pify/ask-question", "ask-question"],
   ["@pify/btw", "btw"],
   ["@pify/goal", "goal"],
   ["@pify/memory", "memory"],
@@ -26,8 +29,10 @@ const PACKAGES = [
   ["@pify/subagent", "subagent"],
   ["@pify/swarm", "swarm"],
   ["@pify/task", "task"],
+  ["@pify/todo", "todo"],
   ["@pify/usage", "usage"],
   ["@pify/workflow", "workflow"],
+  ["@pify/worktree", "worktree"],
   ["@pify/yolo", "yolo"],
 ];
 
