@@ -64,14 +64,14 @@ pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
 | `@pify/memory` | Persistent memory across pi sessions |
 | `@pify/plan-mode` | Read-only planning mode with approve-then-execute gate |
 | `@pify/pretty` | Prettier TUI rendering for tool calls, diffs, markdown |
-| `@pify/subagent` | Spawn scoped subagents from within a pi session |
+| `@pify/subagent` | Spawn scoped subagents, including by `@agent` mention |
 | `@pify/swarm` | Coordinate multiple pi agents working in parallel |
 | `@pify/task` | Task tracking: dependency graph, evidence-gated completion, reminders |
 | `@pify/todo` | Agent working-memory checklist: TodoWrite-style, next-item surfacing |
-| `@pify/usage` | Token and cost reporting: live footer, local-history dashboard |
+| `@pify/usage` | Token and cost reporting, plus what is filling the context window |
 | `@pify/workflow` | Deterministic agent orchestration: CC-style workflow scripts |
 | `@pify/worktree` | Safe git-worktree management with safety rails and merge-back |
-| `@pify/yolo` | Auto-approve everything, with an undo trail |
+| `@pify/yolo` | A safety gradient from auto-approve to ask-about-anything, with an undo trail |
 
 The catalog ships inside the CLI and refreshes (at most daily) from [`catalog.json` on `main`](https://github.com/pifydev/cli/blob/main/catalog.json), so newly published packages appear without a CLI update. A fetched catalog is validated before use — every entry must stay inside the `@pify` scope — and any invalid document is discarded entirely. Overrides: `PIFY_CATALOG_URL` (remote URL), `PIFY_OFFLINE=1` or `PI_OFFLINE=1` (skip all network lookups).
 
