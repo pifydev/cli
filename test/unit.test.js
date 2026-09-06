@@ -5,6 +5,8 @@ import {
   npmInstallPiArgs,
   officialInstallerCommand,
   loadBundledCatalog,
+  expandBundles,
+  findBundle,
   validateCatalog,
   parseInstallSpec,
   resolveInstallTarget,
@@ -213,4 +215,56 @@ test("init templates interpolate and encode the ecosystem rules", () => {
     interpolate(packageJsonTemplate(false), { ...vars, name: "example" }),
   );
   assert.equal(unscoped.publishConfig, undefined);
+});
+
+test("v0.3 bundles expand, dedupe, and never widen the catalog", () => {
+  const catalog = loadBundledCatalog();
+  assert.ok(Array.isArray(catalog.bundles) && catalog.bundles.length > 0);
+
+  const known = new Set(catalog.packages.map((p) => p.name));
+  for (const bundle of catalog.bundles) {
+    assert.ok(bundle.packages.length > 0, bundle.name);
+    for (const member of bundle.packages) {
+      assert.ok(known.has(member), `${bundle.name} -> ${member}`);
+    }
+  }
+
+  const suite = catalog.bundles.find((b) => b.name === "suite");
+  const published = catalog.packages.filter((p) => p.status === "published").map((p) => p.name);
+  assert.deepEqual([...suite.packages].sort(), [...published].sort());
+
+  // a bundle name expands; an ordinary name passes through
+  assert.deepEqual(expandBundles(catalog, ["goal"]), ["goal"]);
+  assert.equal(expandBundles(catalog, ["suite"]).length, published.length);
+
+  // installing a bundle plus one of its members installs it once
+  const core = catalog.bundles.find((b) => b.name === "core");
+  const combined = expandBundles(catalog, ["core", core.packages[0]]);
+  assert.equal(combined.length, core.packages.length);
+  assert.equal(new Set(combined).size, combined.length);
+
+  // unknown names are left alone, so resolveInstallTarget still reports them
+  assert.deepEqual(expandBundles(catalog, ["nope"]), ["nope"]);
+});
+
+test("v0.3 a package name wins over a bundle of the same name", () => {
+  const catalog = loadBundledCatalog();
+  const shadowed = {
+    ...catalog,
+    bundles: [...(catalog.bundles ?? []), { name: "goal", description: "shadow", packages: ["btw"] }],
+  };
+  assert.equal(findBundle(shadowed, "goal"), null);
+  assert.deepEqual(expandBundles(shadowed, ["goal"]), ["goal"]);
+});
+
+test("v0.3 validateCatalog rejects a bundle naming an unknown package", () => {
+  const catalog = loadBundledCatalog();
+  assert.ok(validateCatalog({ ...catalog, bundles: [] }));
+  assert.ok(!validateCatalog({ ...catalog, bundles: [{ name: "x", description: "d", packages: ["nope"] }] }));
+  assert.ok(!validateCatalog({ ...catalog, bundles: [{ name: "X!", description: "d", packages: ["btw"] }] }));
+  assert.ok(!validateCatalog({ ...catalog, bundles: [{ name: "x", description: "d", packages: [] }] }));
+  assert.ok(!validateCatalog({ ...catalog, bundles: "nope" }));
+  // a catalog without the key stays valid (old catalogs, new CLI)
+  const { bundles, ...withoutBundles } = catalog;
+  assert.ok(validateCatalog(withoutBundles));
 });

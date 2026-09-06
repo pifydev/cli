@@ -15,7 +15,13 @@ import { usageError } from "./errors.js";
  */
 
 function packageNames(): string[] {
-  return loadBundledCatalog().packages.map((p) => p.name);
+  const catalog = loadBundledCatalog();
+  // Bundles complete alongside packages — `pify install s<TAB>` should offer
+  // "suite" as readily as "swarm".
+  return [
+    ...catalog.packages.map((p) => p.name),
+    ...(catalog.bundles ?? []).map((b) => b.name),
+  ];
 }
 
 function allNames(spec: CommandSpec): string[] {

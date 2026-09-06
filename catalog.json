@@ -1,5 +1,5 @@
 {
-  "version": 15,
+  "version": 16,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -101,6 +101,48 @@
       "repo": "https://github.com/pifydev/yolo",
       "description": "One toggle to auto-approve everything, with an undo trail: three-tier bash guard, file pre-images",
       "status": "published"
+    }
+  ],
+  "bundles": [
+    {
+      "name": "suite",
+      "description": "Every published @pify extension",
+      "packages": [
+        "ask-question",
+        "btw",
+        "goal",
+        "memory",
+        "plan-mode",
+        "pretty",
+        "subagent",
+        "swarm",
+        "task",
+        "todo",
+        "usage",
+        "workflow",
+        "worktree",
+        "yolo"
+      ]
+    },
+    {
+      "name": "core",
+      "description": "The everyday four: task tracking, planning, memory, and a safety gate",
+      "packages": [
+        "todo",
+        "plan-mode",
+        "memory",
+        "yolo"
+      ]
+    },
+    {
+      "name": "agents",
+      "description": "The agent stack: subagents, parallel fan-out, scripted workflows, worktrees",
+      "packages": [
+        "subagent",
+        "swarm",
+        "workflow",
+        "worktree"
+      ]
     }
   ]
 }

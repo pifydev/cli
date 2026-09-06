@@ -8,11 +8,13 @@ export {
   loadBundledCatalog,
   refreshCatalog,
   validateCatalog,
+  expandBundles,
+  findBundle,
   parseInstallSpec,
   resolveInstallTarget,
   resolvePifyName,
 } from "./catalog.js";
-export type { Catalog, CatalogPackage, InstallSpec, InstallTarget } from "./catalog.js";
+export type { Catalog, CatalogBundle, CatalogPackage, InstallSpec, InstallTarget } from "./catalog.js";
 export {
   piStatus,
   fetchLatestPiVersion,

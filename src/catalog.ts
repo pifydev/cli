@@ -16,6 +16,13 @@ export interface CatalogPackage {
   status: "published" | "planned";
 }
 
+/** A named set of packages installable in one go, e.g. `pify install suite`. */
+export interface CatalogBundle {
+  name: string;
+  description: string;
+  packages: string[];
+}
+
 export interface Catalog {
   version: number;
   org: string;
@@ -23,6 +30,8 @@ export interface Catalog {
   /** URL of the always-current catalog on the org's main branch. */
   remote: string;
   packages: CatalogPackage[];
+  /** Optional (v0.3): older CLIs ignore this key and keep working. */
+  bundles?: CatalogBundle[];
 }
 
 /** catalog.json ships at the package root, one level above dist/. */
@@ -60,7 +69,47 @@ export function validateCatalog(data: unknown): data is Catalog {
     if (typeof p.npm !== "string" || !p.npm.startsWith("@pify/")) return false;
     if (p.status !== "published" && p.status !== "planned") return false;
   }
+  // Bundles are optional and must not be able to smuggle anything in: every
+  // member has to be a package this same catalog already declares, so a
+  // bundle can never widen what an install reaches.
+  if (c.bundles !== undefined) {
+    if (!Array.isArray(c.bundles)) return false;
+    const known = new Set((c.packages as CatalogPackage[]).map((p) => p.name));
+    for (const entry of c.bundles) {
+      if (typeof entry !== "object" || entry === null) return false;
+      const b = entry as Record<string, unknown>;
+      if (typeof b.name !== "string" || !/^[a-z0-9-]+$/.test(b.name)) return false;
+      if (typeof b.description !== "string") return false;
+      if (!Array.isArray(b.packages) || b.packages.length === 0) return false;
+      for (const member of b.packages) {
+        if (typeof member !== "string" || !known.has(member)) return false;
+      }
+    }
+  }
   return true;
+}
+
+/** The bundle by that name, or null. Package names always win over bundles. */
+export function findBundle(catalog: Catalog, name: string): CatalogBundle | null {
+  const wanted = name.trim().toLowerCase();
+  if (catalog.packages.some((p) => p.name === wanted)) return null;
+  return catalog.bundles?.find((b) => b.name === wanted) ?? null;
+}
+
+/**
+ * Expand bundle names into their members, keeping order and dropping
+ * duplicates — installing `suite goal` must not install goal twice.
+ */
+export function expandBundles(catalog: Catalog, names: string[]): string[] {
+  const expanded: string[] = [];
+  for (const name of names) {
+    const bundle = findBundle(catalog, name);
+    const members = bundle ? bundle.packages : [name];
+    for (const member of members) {
+      if (!expanded.includes(member)) expanded.push(member);
+    }
+  }
+  return expanded;
 }
 
 /**

@@ -22,7 +22,7 @@ Usage:
 
 Commands:
   setup                  Install the pi coding agent (safe to re-run)
-  install <name...>      Install @pify packages by short name
+  install <name...>      Install @pify packages, or a bundle (suite|core|agents)
   remove <name...>       Remove installed @pify packages
   update [pi|<name...>]  Update pi and installed @pify packages
   list                   Show the @pify catalog with install state
@@ -97,6 +97,11 @@ Examples:
 Install @pify packages by short name. Names resolve against the Pify catalog
 (goal -> npm:@pify/goal); the install itself is delegated to pi install.
 Exact version pins are accepted (goal@0.3.0); range specifiers are refused.
+
+A bundle name installs several at once — pify install suite (everything),
+core (todo, plan-mode, memory, yolo), or agents (subagent, swarm, workflow,
+worktree). Bundle members are resolved exactly like typed names, and a
+package name always wins over a bundle with the same name.
 
 Options:
   -l, --local            Project scope (.pi/settings.json, .pi/npm)

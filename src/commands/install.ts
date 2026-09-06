@@ -1,4 +1,4 @@
-import { loadCatalog, resolveInstallTarget, type InstallTarget } from "../catalog.js";
+import { expandBundles, findBundle, loadCatalog, resolveInstallTarget, type InstallTarget } from "../catalog.js";
 import { delegate, requirePi } from "../pi.js";
 import { usageError, PifyError, ExitCode } from "../errors.js";
 import { out, step, warn } from "../ui.js";
@@ -29,9 +29,18 @@ export async function install(names: string[], opts: InstallOptions): Promise<nu
 
   const catalog = await loadCatalog();
 
+  // Bundles expand first (`pify install suite`), then everything goes through
+  // the same per-package resolution — a bundle is a shorthand, not a second
+  // install path.
+  for (const name of names) {
+    const bundle = findBundle(catalog, name);
+    if (bundle) step(`${bundle.name}: ${bundle.packages.length} packages — ${bundle.description}`);
+  }
+  const expanded = expandBundles(catalog, names);
+
   // Resolve every name before doing anything: a typo never leaves a
   // half-applied multi-install. Throws exit 2/4 on the first bad name.
-  const targets = names.map((name) => resolveInstallTarget(catalog, name));
+  const targets = expanded.map((name) => resolveInstallTarget(catalog, name));
 
   for (const target of targets) {
     if (target.explicit && (!target.inCatalog || target.status !== "published")) {

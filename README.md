@@ -24,6 +24,7 @@ pify setup --pi-version 0.84.4   # pin the version your team has tested
 pify setup --installer     # run pi's official interactive installer (ps1/sh)
 pify list                  # show the @pify catalog with install state
 pify install goal task     # short names resolve to @pify/goal, @pify/task
+pify install suite         # the whole suite in one go (also: core, agents)
 pify install goal -l -a    # project scope, pre-approved (CI-friendly)
 pify remove goal
 pify update                # update pi + every installed @pify package
