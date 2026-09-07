@@ -1,5 +1,13 @@
 import { loadCatalog, refreshCatalog, resolvePifyName } from "../catalog.js";
-import { delegate, installedPifyPackages, installPi, piStatus } from "../pi.js";
+import {
+  compareSemver,
+  delegate,
+  fetchLatestPackageVersion,
+  installedPifyPackages,
+  installedVersionOnDisk,
+  installPi,
+  piStatus,
+} from "../pi.js";
 import { isOffline } from "../exec.js";
 import { usageError, notFoundError, PifyError, ExitCode } from "../errors.js";
 import { out, step, success, hint, warn } from "../ui.js";
@@ -7,6 +15,45 @@ import { out, step, success, hint, warn } from "../ui.js";
 export interface UpdateOptions {
   catalogOnly: boolean;
   dryRun: boolean;
+  /** Report what is out of date and change nothing (v0.4). */
+  check: boolean;
+  json: boolean;
+}
+
+export interface UpdateStatus {
+  name: string;
+  installed: string | null;
+  latest: string | null;
+  state: "current" | "outdated" | "missing" | "unknown";
+}
+
+/**
+ * Compare what is installed against what is published, without installing
+ * anything. Separating the question from the action is the point: "is there
+ * anything to do" is asked far more often than "do it", and it should not
+ * cost a package install to find out.
+ */
+export async function checkUpdates(): Promise<UpdateStatus[]> {
+  const installed = installedPifyPackages();
+  const names = [...installed.keys()].sort();
+  const statuses = await Promise.all(
+    names.map(async (name): Promise<UpdateStatus> => {
+      const entry = installed.get(name)!;
+      const onDisk = installedVersionOnDisk(name, entry.scope);
+      const latest = await fetchLatestPackageVersion(name);
+      if (!onDisk.present) return { name, installed: null, latest, state: "missing" };
+      if (!onDisk.version || !latest) {
+        return { name, installed: onDisk.version, latest, state: "unknown" };
+      }
+      return {
+        name,
+        installed: onDisk.version,
+        latest,
+        state: compareSemver(onDisk.version, latest) < 0 ? "outdated" : "current",
+      };
+    }),
+  );
+  return statuses;
 }
 
 /**
@@ -31,6 +78,35 @@ export async function update(targets: string[], opts: UpdateOptions): Promise<nu
     } else {
       warn("Could not refresh the catalog; using the existing copy.");
     }
+    return 0;
+  }
+
+  if (opts.check) {
+    if (targets.length > 0) throw usageError("--check reports on everything; drop the package names.");
+    const statuses = await checkUpdates();
+    if (opts.json) {
+      out(JSON.stringify({ packages: statuses }, null, 2));
+      return 0;
+    }
+    if (statuses.length === 0) {
+      hint("No @pify packages installed.");
+      return 0;
+    }
+    const width = statuses.reduce((m, s) => Math.max(m, s.name.length), 0);
+    for (const status of statuses) {
+      const detail =
+        status.state === "outdated"
+          ? `${status.installed} → ${status.latest}`
+          : status.state === "missing"
+            ? "configured but not on disk"
+            : status.state === "unknown"
+              ? `${status.installed ?? "?"} (registry unreachable)`
+              : `${status.installed}`;
+      out(`  ${status.state.padEnd(9)}${status.name.padEnd(width + 2)}${detail}`);
+    }
+    const outdated = statuses.filter((s) => s.state === "outdated").length;
+    out();
+    out(outdated > 0 ? `${outdated} package(s) can be updated: pify update` : "Everything is current.");
     return 0;
   }
 

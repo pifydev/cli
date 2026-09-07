@@ -27,6 +27,7 @@ Commands:
   update [pi|<name...>]  Update pi and installed @pify packages
   list                   Show the @pify catalog with install state
   doctor                 Diagnose the local pi/pify environment
+  profile save|apply     Save the installed suite to a file, or apply one
   init [dir]             Scaffold a new Pi Package
   completions <shell>    Print a completion script (bash|zsh|fish|powershell)
 
@@ -91,6 +92,22 @@ Examples:
   # Full native experience (Windows: install.ps1, Unix: install.sh)
   pify setup --installer
 `,
+  profile: `Usage:
+  pify profile save [file]          # default: pify-profile.json
+  pify profile apply <file> [--yes]
+
+Write down the suite you actually run — which packages, at which versions —
+so a second machine can reproduce it. Applying always prints the plan first
+and changes nothing without --yes.
+
+A package installed here but absent from the profile is reported and left
+alone: a profile says what must be present, not what must be removed.
+
+Options:
+  -y, --yes              Apply the plan instead of only showing it
+      --json             Machine-readable plan
+`,
+
   install: `Usage:
   pify install <name...> [-l] [-a] [--dry-run]
 

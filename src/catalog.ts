@@ -14,6 +14,12 @@ export interface CatalogPackage {
   description: string;
   /** "published" once it exists on the npm registry; "planned" before that. */
   status: "published" | "planned";
+  /**
+   * npm packages that cannot run alongside this one — they register the same
+   * command, tool, or flag, so pi loads both and one silently wins. Each entry
+   * is documented in that package's own README (v0.4).
+   */
+  conflicts?: string[];
 }
 
 /** A named set of packages installable in one go, e.g. `pify install suite`. */
@@ -68,6 +74,14 @@ export function validateCatalog(data: unknown): data is Catalog {
     if (typeof p.name !== "string" || !/^[a-z0-9-]+$/.test(p.name)) return false;
     if (typeof p.npm !== "string" || !p.npm.startsWith("@pify/")) return false;
     if (p.status !== "published" && p.status !== "planned") return false;
+    if (p.conflicts !== undefined) {
+      if (!Array.isArray(p.conflicts)) return false;
+      // A conflict entry names a package to warn about; it must never be a
+      // vector for anything else, so only npm-name-shaped strings pass.
+      if (!p.conflicts.every((c) => typeof c === "string" && /^(@[a-z0-9._-]+\/)?[a-z0-9._-]+$/.test(c))) {
+        return false;
+      }
+    }
   }
   // Bundles are optional and must not be able to smuggle anything in: every
   // member has to be a package this same catalog already declares, so a

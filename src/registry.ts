@@ -12,7 +12,7 @@ export interface FlagSpec {
   description: string;
 }
 
-export type PositionalKind = "none" | "packages" | "updateTargets" | "directory" | "shell";
+export type PositionalKind = "none" | "packages" | "updateTargets" | "directory" | "shell" | "profile";
 
 export interface CommandSpec {
   name: string;
@@ -69,6 +69,8 @@ export const COMMAND_SPECS: CommandSpec[] = [
     positional: "updateTargets",
     flags: [
       { name: "catalog", description: "Refresh the catalog cache only" },
+      { name: "check", description: "Report what is out of date and change nothing" },
+      { name: "json", description: "Machine-readable output (with --check)" },
       { name: "dry-run", description: "Print the update plan without executing" },
     ],
   },
@@ -85,6 +87,16 @@ export const COMMAND_SPECS: CommandSpec[] = [
     description: "Diagnose the local pi/pify environment",
     positional: "none",
     flags: [{ name: "json", description: "Machine-readable output" }],
+  },
+  {
+    name: "profile",
+    aliases: [],
+    description: "Save the installed suite to a file, or apply one",
+    positional: "profile",
+    flags: [
+      { name: "yes", short: "y", description: "Apply the plan instead of only showing it" },
+      { name: "json", description: "Machine-readable plan" },
+    ],
   },
   {
     name: "init",

@@ -40,6 +40,8 @@ function positionalWords(spec: CommandSpec): string[] {
       return ["pi", ...packageNames()];
     case "shell":
       return [...COMPLETION_SHELLS];
+    case "profile":
+      return ["save", "apply"];
     default:
       return [];
   }

@@ -2,6 +2,7 @@ import { parseArgs } from "node:util";
 import { setup } from "./commands/setup.js";
 import { install } from "./commands/install.js";
 import { remove } from "./commands/remove.js";
+import { profile } from "./commands/profile.js";
 import { update } from "./commands/update.js";
 import { list } from "./commands/list.js";
 import { doctor } from "./commands/doctor.js";
@@ -17,6 +18,7 @@ type Runner = (positionals: string[], values: Record<string, unknown>) => Promis
 
 /** Behavior per command; the surface itself lives in registry.ts. */
 const RUNNERS: Record<string, Runner> = {
+  profile: (p, v) => profile(p, { yes: Boolean(v.yes), json: Boolean(v.json) }),
   setup: (_p, v) =>
     setup({
       force: Boolean(v.force),
@@ -35,7 +37,13 @@ const RUNNERS: Record<string, Runner> = {
       approve: Boolean(v.approve),
       dryRun: Boolean(v["dry-run"]),
     }),
-  update: (p, v) => update(p, { catalogOnly: Boolean(v.catalog), dryRun: Boolean(v["dry-run"]) }),
+  update: (p, v) =>
+    update(p, {
+      catalogOnly: Boolean(v.catalog),
+      dryRun: Boolean(v["dry-run"]),
+      check: Boolean(v.check),
+      json: Boolean(v.json),
+    }),
   list: (_p, v) => list({ json: Boolean(v.json) }),
   doctor: (_p, v) => doctor({ json: Boolean(v.json) }),
   init: (p, v) =>

@@ -27,7 +27,10 @@ pify install goal task     # short names resolve to @pify/goal, @pify/task
 pify install suite         # the whole suite in one go (also: core, agents)
 pify install goal -l -a    # project scope, pre-approved (CI-friendly)
 pify remove goal
+pify update --check        # what is out of date, changing nothing (v0.4)
 pify update                # update pi + every installed @pify package
+pify profile save          # write the installed suite + versions to a file (v0.4)
+pify profile apply f.json  # diff it against this machine; --yes to apply
 pify update pi             # agent only
 pify doctor                # diagnose node / npm / pi / settings
 pify init my-extension     # scaffold a new Pi Package
@@ -100,6 +103,36 @@ npm run typecheck
 ```
 
 Requires Node >= 22.19.0 (same floor as the pi coding agent). Tested with pi 0.84.4.
+
+## Profiles (v0.4)
+
+The suite you actually run, written down — which packages, at which versions, in which scope — so a second machine can reproduce it:
+
+```bash
+pify profile save                  # → pify-profile.json
+pify profile apply pify-profile.json          # prints the plan, changes nothing
+pify profile apply pify-profile.json --yes    # applies it
+```
+
+Applying always shows the difference first:
+
+```
+  change  goal          0.5.0 → 0.4.0
+  extra   todo          installed here, not in the profile (left alone)
+  install swarm         (latest)
+```
+
+A package installed here but absent from the profile is reported as `extra` and **never removed**: a profile says what must be present, not what must be deleted. Every name still goes through the same catalog resolution as a typed install, so a profile file cannot reach outside the `@pify` scope. (Profiles, and the rule that applying passes through a review, are from [`pi-extmgr`](https://github.com/ayagmar/pi-extmgr); what this drops is the interactive screen — a CLI's review is a diff and an explicit flag.)
+
+## Conflict detection (v0.4)
+
+Some extensions cannot run beside each other: they register the same command, tool, or flag, so pi loads both and one silently wins — and which one is not something you chose. `pify doctor` now reads pi's whole package list and says so:
+
+```
+  warn  conflicts   @pify/memory + pi-memory; @pify/pretty + pi-pretty-tui register the same commands or tools - remove one
+```
+
+The pairs come from the catalog, where each is taken from the package's own README. (pi-extmgr detects this at runtime through `pi.getCommands()`, which a CLI outside pi cannot call; this is the static equivalent.)
 
 ## License
 

@@ -3,6 +3,8 @@
  * this module is for org tooling and tests that want the same primitives.
  */
 export { VERSION } from "./version.js";
+export { parseProfile, planApply, buildProfile } from "./commands/profile.js";
+export type { Profile, ProfileEntry, PlanRow } from "./commands/profile.js";
 export {
   loadCatalog,
   loadBundledCatalog,

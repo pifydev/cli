@@ -7,11 +7,13 @@ import {
   npmPrefixEvidence,
   readSettings,
   settingsPath,
+  configuredNpmPackages,
   installedPifyPackages,
   installedVersionOnDisk,
   agentDir,
   NODE_FLOOR,
 } from "../pi.js";
+import { loadCatalog } from "../catalog.js";
 import { out, style } from "../ui.js";
 import { VERSION } from "../version.js";
 
@@ -141,7 +143,31 @@ export async function doctor(opts: DoctorOptions): Promise<number> {
     }
   }
 
-  // 10. env
+  // 10. conflicting packages
+  const catalog = await loadCatalog();
+  const configured = configuredNpmPackages();
+  const configuredNames = new Set(configured.map((p) => p.name));
+  const clashes: string[] = [];
+  for (const entry of catalog.packages) {
+    if (!entry.conflicts?.length) continue;
+    if (!configuredNames.has(entry.npm)) continue;
+    for (const other of entry.conflicts) {
+      if (configuredNames.has(other)) clashes.push(`${entry.npm} + ${other}`);
+    }
+  }
+  if (clashes.length === 0) {
+    push("conflicts", "ok", `no conflicting packages among ${configured.length} configured`);
+  } else {
+    // Both load, and one silently wins — which one is not something the user
+    // chose, so this is worth a warning even though nothing is broken.
+    push(
+      "conflicts",
+      "warn",
+      `${clashes.join("; ")} register the same commands or tools - remove one (pi remove npm:<name>)`,
+    );
+  }
+
+  // 11. env
   const envVars = ["PI_OFFLINE", "PIFY_OFFLINE", "PI_CODING_AGENT_DIR", "NO_COLOR", "PIFY_CATALOG_URL"]
     .filter((name) => process.env[name] !== undefined)
     .map((name) => `${name}=${process.env[name]}`);

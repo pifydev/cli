@@ -6,6 +6,8 @@ import {
   officialInstallerCommand,
   loadBundledCatalog,
   expandBundles,
+  parseProfile,
+  planApply,
   findBundle,
   validateCatalog,
   parseInstallSpec,
@@ -267,4 +269,80 @@ test("v0.3 validateCatalog rejects a bundle naming an unknown package", () => {
   // a catalog without the key stays valid (old catalogs, new CLI)
   const { bundles, ...withoutBundles } = catalog;
   assert.ok(validateCatalog(withoutBundles));
+});
+
+test("v0.4 a profile round-trips, and only version 1 is honoured", () => {
+  const profile = {
+    version: 1,
+    createdAt: "2026-09-07T00:00:00.000Z",
+    packages: [
+      { name: "goal", version: "0.5.0", scope: "user" },
+      { name: "yolo", version: null, scope: "project" },
+    ],
+  };
+  const parsed = parseProfile(JSON.stringify(profile));
+  assert.deepEqual(parsed.packages, profile.packages);
+
+  // A future format is refused rather than half-read.
+  assert.throws(() => parseProfile(JSON.stringify({ ...profile, version: 2 })), /Unsupported profile version/);
+  assert.throws(() => parseProfile("not json"), /not valid JSON/);
+  assert.throws(() => parseProfile(JSON.stringify({ version: 1 })), /no packages array/);
+
+  // Names and scopes are validated: a profile is an install instruction.
+  const bad = (pkg) => JSON.stringify({ ...profile, packages: [pkg] });
+  assert.throws(() => parseProfile(bad({ name: "../evil", version: null, scope: "user" })), /Invalid package name/);
+  assert.throws(() => parseProfile(bad({ name: "goal", version: 5, scope: "user" })), /Invalid version/);
+  assert.throws(() => parseProfile(bad({ name: "goal", version: null, scope: "global" })), /Invalid scope/);
+});
+
+test("v0.4 planApply says what would change and never proposes a removal", () => {
+  const profile = {
+    version: 1,
+    createdAt: "",
+    packages: [
+      { name: "goal", version: "0.4.0", scope: "user" },
+      { name: "btw", version: "0.3.0", scope: "user" },
+      { name: "swarm", version: null, scope: "user" },
+    ],
+  };
+  const installed = new Map([
+    ["goal", { scope: "user" }],
+    ["btw", { scope: "user" }],
+    ["todo", { scope: "user" }],
+  ]);
+  const rows = planApply(profile, installed);
+  const byName = new Map(rows.map((r) => [r.name, r]));
+
+  assert.equal(byName.get("swarm").action, "install", "absent here, present in the profile");
+  assert.equal(byName.get("todo").action, "extra", "present here, absent from the profile");
+  assert.ok(!rows.some((r) => r.action === "remove"), "a profile never removes anything");
+  // goal/btw resolve against the real disk state, so their action depends on
+  // the machine; what matters is that they are reported, not skipped.
+  assert.ok(byName.has("goal") && byName.has("btw"));
+  assert.deepEqual(
+    rows.map((r) => r.name),
+    [...rows].sort((a, b) => a.name.localeCompare(b.name)).map((r) => r.name),
+    "rows are sorted so two runs read the same",
+  );
+});
+
+test("v0.4 the catalog declares conflicts, and only npm-shaped names", () => {
+  const catalog = loadBundledCatalog();
+  const withConflicts = catalog.packages.filter((p) => p.conflicts?.length);
+  assert.ok(withConflicts.length >= 3, "memory, plan-mode and pretty each document one");
+  for (const entry of withConflicts) {
+    for (const other of entry.conflicts) {
+      assert.match(other, /^(@[a-z0-9._-]+\/)?[a-z0-9._-]+$/, `${entry.name} -> ${other}`);
+      assert.notEqual(other, entry.npm, "a package cannot conflict with itself");
+    }
+  }
+  assert.ok(validateCatalog(catalog));
+  // a conflict entry that is not an npm name invalidates the whole catalog
+  const tampered = {
+    ...catalog,
+    packages: catalog.packages.map((p) =>
+      p.name === "memory" ? { ...p, conflicts: ["../../etc/passwd"] } : p,
+    ),
+  };
+  assert.ok(!validateCatalog(tampered));
 });

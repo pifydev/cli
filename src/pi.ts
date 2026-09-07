@@ -342,6 +342,28 @@ export interface InstalledPifyPackage {
  * @pify packages configured in pi's settings, both scopes, deduped by name
  * (project wins, matching pi's own scope precedence).
  */
+/**
+ * Every npm package pi is configured to load, @pify or not, as bare npm names.
+ * Conflict checking needs the whole list: the packages that clash with a suite
+ * package are by definition other people's.
+ */
+export function configuredNpmPackages(): Array<{ name: string; scope: "user" | "project" }> {
+  const found: Array<{ name: string; scope: "user" | "project" }> = [];
+  for (const scope of ["user", "project"] as const) {
+    const settings = readSettings(scope);
+    for (const entry of settings?.packages ?? []) {
+      const source = typeof entry === "string" ? entry : entry.source;
+      if (typeof source !== "string" || !source.startsWith("npm:")) continue;
+      const spec = source.slice("npm:".length);
+      // Strip a version pin, keeping the leading @ of a scoped name.
+      const at = spec.indexOf("@", spec.startsWith("@") ? 1 : 0);
+      const name = at > 0 ? spec.slice(0, at) : spec;
+      if (name && !found.some((f) => f.name === name && f.scope === scope)) found.push({ name, scope });
+    }
+  }
+  return found;
+}
+
 export function installedPifyPackages(): Map<string, InstalledPifyPackage> {
   const result = new Map<string, InstalledPifyPackage>();
   for (const scope of ["user", "project"] as const) {
@@ -361,6 +383,30 @@ export function installedPifyPackages(): Map<string, InstalledPifyPackage> {
 export interface OnDiskState {
   present: boolean;
   version: string | null;
+}
+
+/**
+ * Latest published version of an @pify package. Registry metadata only, never
+ * a tarball. Null on any failure, including offline: a check that cannot reach
+ * the registry reports "unknown", not "up to date".
+ */
+export async function fetchLatestPackageVersion(name: string): Promise<string | null> {
+  if (isOffline()) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`https://registry.npmjs.org/@pify/${encodeURIComponent(name)}/latest`, {
+      signal: controller.signal,
+      headers: { "user-agent": `pify/${VERSION}`, accept: "application/json" },
+      redirect: "error",
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { version?: unknown };
+    return typeof data.version === "string" ? data.version : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Version of an installed @pify package as materialized in pi's npm root. */
