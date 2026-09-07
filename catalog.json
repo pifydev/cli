@@ -1,5 +1,5 @@
 {
-  "version": 18,
+  "version": 19,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -103,7 +103,7 @@
       "name": "worktree",
       "npm": "@pify/worktree",
       "repo": "https://github.com/pifydev/worktree",
-      "description": "Safe git-worktree management: create/list/merge/remove with safety rails, no shell interpolation",
+      "description": "Safe git-worktree management: create/list/merge/remove with safety rails, plus /worktree enter to take the conversation into one",
       "status": "published"
     },
     {
