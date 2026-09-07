@@ -20,16 +20,16 @@ npx @pify/cli setup
 
 ```
 pify setup                 # install the pi coding agent (safe to re-run)
-pify setup --pi-version 0.84.4   # pin the version your team has tested
+pify setup --pi-version 0.85.1   # pin the version your team has tested
 pify setup --installer     # run pi's official interactive installer (ps1/sh)
 pify list                  # show the @pify catalog with install state
 pify install goal task     # short names resolve to @pify/goal, @pify/task
 pify install suite         # the whole suite in one go (also: core, agents)
 pify install goal -l -a    # project scope, pre-approved (CI-friendly)
 pify remove goal
-pify update --check        # what is out of date, changing nothing (v0.4)
+pify update --check        # what is out of date, changing nothing
 pify update                # update pi + every installed @pify package
-pify profile save          # write the installed suite + versions to a file (v0.4)
+pify profile save          # write the installed suite + versions to a file
 pify profile apply f.json  # diff it against this machine; --yes to apply
 pify update pi             # agent only
 pify doctor                # diagnose node / npm / pi / settings
@@ -66,14 +66,14 @@ pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
 | `@pify/goal` | Pin a session goal and keep the agent anchored to it |
 | `@pify/memory` | Persistent memory across pi sessions |
 | `@pify/plan-mode` | Read-only planning mode with approve-then-execute gate |
-| `@pify/pretty` | Prettier TUI rendering for tool calls, diffs, markdown |
+| `@pify/pretty` | Compact, theme-aware rendering for pi's built-in tools |
 | `@pify/subagent` | Spawn scoped subagents, including by `@agent` mention |
 | `@pify/swarm` | Coordinate multiple pi agents working in parallel |
 | `@pify/task` | Task tracking: dependency graph, evidence-gated completion, reminders |
-| `@pify/todo` | Agent working-memory checklist: TodoWrite-style, next-item surfacing |
+| `@pify/todo` | Agent working-memory checklist with next-item surfacing |
 | `@pify/usage` | Token and cost reporting, plus what is filling the context window |
-| `@pify/workflow` | Deterministic agent orchestration: CC-style workflow scripts |
-| `@pify/worktree` | Safe git-worktree management with safety rails and merge-back |
+| `@pify/workflow` | Deterministic agent orchestration through JavaScript workflow scripts |
+| `@pify/worktree` | Safe git-worktree management, with `/worktree enter` to take the session along |
 | `@pify/yolo` | A safety gradient from auto-approve to ask-about-anything, with an undo trail |
 
 The catalog ships inside the CLI and refreshes (at most daily) from [`catalog.json` on `main`](https://github.com/pifydev/cli/blob/main/catalog.json), so newly published packages appear without a CLI update. A fetched catalog is validated before use — every entry must stay inside the `@pify` scope — and any invalid document is discarded entirely. Overrides: `PIFY_CATALOG_URL` (remote URL), `PIFY_OFFLINE=1` or `PI_OFFLINE=1` (skip all network lookups).
@@ -93,18 +93,7 @@ Explicit `@pify/<name>` arguments bypass the catalog's published/planned gate (w
 
 Colored output respects `NO_COLOR`, `FORCE_COLOR`, `--no-color`, and non-TTY pipes. Results go to stdout; warnings and errors go to stderr. No interactive prompts anywhere — behavior is identical in TTY and CI except color.
 
-## Development
-
-```bash
-npm install
-npm run build      # tsup -> dist/
-npm test           # builds first, then node --test
-npm run typecheck
-```
-
-Requires Node >= 22.19.0 (same floor as the pi coding agent). Tested with pi 0.84.4.
-
-## Profiles (v0.4)
+## Profiles
 
 The suite you actually run, written down — which packages, at which versions, in which scope — so a second machine can reproduce it:
 
@@ -122,9 +111,9 @@ Applying always shows the difference first:
   install swarm         (latest)
 ```
 
-A package installed here but absent from the profile is reported as `extra` and **never removed**: a profile says what must be present, not what must be deleted. Every name still goes through the same catalog resolution as a typed install, so a profile file cannot reach outside the `@pify` scope. (Profiles, and the rule that applying passes through a review, are from [`pi-extmgr`](https://github.com/ayagmar/pi-extmgr); what this drops is the interactive screen — a CLI's review is a diff and an explicit flag.)
+A package installed here but absent from the profile is reported as `extra` and **never removed**: a profile says what must be present, not what must be deleted. Every name still goes through the same catalog resolution as a typed install, so a profile file cannot reach outside the `@pify` scope. A CLI's review is a diff and an explicit flag rather than an interactive screen, so the same command works the same way in a script.
 
-## Conflict detection (v0.4)
+## Conflict detection
 
 Some extensions cannot run beside each other: they register the same command, tool, or flag, so pi loads both and one silently wins — and which one is not something you chose. `pify doctor` now reads pi's whole package list and says so:
 
@@ -132,7 +121,18 @@ Some extensions cannot run beside each other: they register the same command, to
   warn  conflicts   @pify/memory + pi-memory; @pify/pretty + pi-pretty-tui register the same commands or tools - remove one
 ```
 
-The pairs come from the catalog, where each is taken from the package's own README. (pi-extmgr detects this at runtime through `pi.getCommands()`, which a CLI outside pi cannot call; this is the static equivalent.)
+The pairs come from the catalog, where each is taken from the package's own README. Detecting this properly would mean asking a running pi which commands are registered, which a CLI outside pi cannot do — so this is the static equivalent, and it is only as complete as the catalog.
+
+## Development
+
+```bash
+npm install
+npm run build      # tsup -> dist/
+npm test           # builds first, then node --test
+npm run typecheck
+```
+
+Requires Node >= 22.19.0 — the same floor as the pi coding agent.
 
 ## License
 
