@@ -1,5 +1,5 @@
 {
-  "version": 22,
+  "version": 23,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -56,6 +56,13 @@
         "pi-pretty-tui",
         "pi-tool-display"
       ]
+    },
+    {
+      "name": "skills",
+      "npm": "@pify/skills",
+      "repo": "https://github.com/pifydev/skills",
+      "description": "See the skills pi has loaded, what they cost in every request, and which ones ever fire",
+      "status": "published"
     },
     {
       "name": "subagent",
@@ -125,6 +132,7 @@
         "memory",
         "plan-mode",
         "pretty",
+        "skills",
         "subagent",
         "swarm",
         "task",
