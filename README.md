@@ -80,6 +80,17 @@ The catalog ships inside the CLI and refreshes (at most daily) from [`catalog.js
 
 Explicit `@pify/<name>` arguments bypass the catalog's published/planned gate (with a warning), so a freshly published package is installable before the catalog propagates.
 
+## Environment
+
+| Variable | Effect |
+|---|---|
+| `PIFY_CATALOG_URL` | Fetch the catalog from somewhere other than the org's `main` |
+| `PIFY_OFFLINE=1` / `PI_OFFLINE=1` | Skip every network lookup |
+| `PIFY_TRUST_PROJECT=1` | Approve project-supplied config for the suite's extensions in a headless run |
+| `NO_COLOR` / `FORCE_COLOR` | Colour, as usual |
+
+`PIFY_TRUST_PROJECT` is read by the extensions rather than by this CLI, and it matters in CI. Several packages load files a repository ships — `@pify/memory`'s `.pi/memory/MEMORY.md`, `@pify/subagent`'s `.pi/agents/*.md`, `@pify/yolo`'s `.pi/yolo.json` — and each asks once before doing so, because pi's own trust prompt does not cover files pi itself does not load. With no UI to ask through, the answer is no. Set this to `1` where you have decided the checkout is trustworthy. It is an environment variable rather than a config file precisely because the repository being read cannot set one for itself.
+
 ## Exit codes
 
 | Code | Meaning |
