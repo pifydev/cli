@@ -67,6 +67,7 @@ pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
 | `@pify/memory` | Persistent memory across pi sessions |
 | `@pify/plan-mode` | Read-only planning mode with approve-then-execute gate |
 | `@pify/pretty` | Compact, theme-aware rendering for pi's built-in tools |
+| `@pify/skills` | See what skills are loaded, what they cost per request, and which ones ever fire |
 | `@pify/subagent` | Spawn scoped subagents, including by `@agent` mention |
 | `@pify/swarm` | Coordinate multiple pi agents working in parallel |
 | `@pify/task` | Task tracking: dependency graph, evidence-gated completion, reminders |
