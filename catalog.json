@@ -1,5 +1,5 @@
 {
-  "version": 21,
+  "version": 22,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -61,14 +61,14 @@
       "name": "subagent",
       "npm": "@pify/subagent",
       "repo": "https://github.com/pifydev/subagent",
-      "description": "Spawn scoped subagents: agent_run/agent_result, @agent mentions, custom agent types, ask_supervisor",
+      "description": "Spawn scoped subagents: agent_run/agent_result, @agent mentions, custom agent types, ask_supervisor, results delivered not polled",
       "status": "published"
     },
     {
       "name": "swarm",
       "npm": "@pify/swarm",
       "repo": "https://github.com/pifydev/swarm",
-      "description": "Run many pi agents in parallel: fan-out with per-item routing, concurrency queue, shared mailbox",
+      "description": "Run many pi agents in parallel: fan-out with per-item routing, concurrency queue, shared mailbox, results delivered not polled",
       "status": "published"
     },
     {
