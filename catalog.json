@@ -1,5 +1,5 @@
 {
-  "version": 20,
+  "version": 21,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -110,7 +110,7 @@
       "name": "yolo",
       "npm": "@pify/yolo",
       "repo": "https://github.com/pifydev/yolo",
-      "description": "A safety gradient from auto-approve-everything to ask-about-anything: four modes, undo trail, read-before-write",
+      "description": "A safety gradient from auto-approve-everything to ask-about-anything: four modes, read-before-write, undo trail, rewind to before a prompt",
       "status": "published"
     }
   ],
