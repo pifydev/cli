@@ -1,5 +1,5 @@
 {
-  "version": 23,
+  "version": 24,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -56,6 +56,13 @@
         "pi-pretty-tui",
         "pi-tool-display"
       ]
+    },
+    {
+      "name": "search",
+      "npm": "@pify/search",
+      "repo": "https://github.com/pifydev/search",
+      "description": "Fuzzy file finding and indexed content search: fffind and ffgrep, with a pure-TypeScript fallback",
+      "status": "published"
     },
     {
       "name": "skills",
@@ -132,6 +139,7 @@
         "memory",
         "plan-mode",
         "pretty",
+        "search",
         "skills",
         "subagent",
         "swarm",
