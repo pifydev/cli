@@ -1,5 +1,5 @@
 {
-  "version": 24,
+  "version": 25,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -62,6 +62,13 @@
       "npm": "@pify/search",
       "repo": "https://github.com/pifydev/search",
       "description": "Fuzzy file finding and indexed content search: fffind and ffgrep, with a pure-TypeScript fallback",
+      "status": "published"
+    },
+    {
+      "name": "shell-background",
+      "npm": "@pify/shell-background",
+      "repo": "https://github.com/pifydev/shell-background",
+      "description": "Long-running bash goes async: background:true launches detached, and commands still running after 30s auto-background",
       "status": "published"
     },
     {
@@ -140,6 +147,7 @@
         "plan-mode",
         "pretty",
         "search",
+        "shell-background",
         "skills",
         "subagent",
         "swarm",

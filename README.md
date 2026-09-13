@@ -70,6 +70,7 @@ pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
 | `@pify/plan-mode` | Read-only planning mode with approve-then-execute gate |
 | `@pify/pretty` | Compact, theme-aware rendering for pi's built-in tools |
 | `@pify/search` | Fuzzy file finding and indexed content search: `fffind` and `ffgrep` |
+| `@pify/shell-background` | Long-running bash goes async: `background: true` and automatic 30s backgrounding |
 | `@pify/skills` | See what skills are loaded, what they cost per request, and which ones ever fire |
 | `@pify/subagent` | Spawn scoped subagents, including by `@agent` mention |
 | `@pify/swarm` | Coordinate multiple pi agents working in parallel |
