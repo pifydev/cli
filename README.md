@@ -1,6 +1,6 @@
 # @pify/cli
 
-[![npm version](https://img.shields.io/npm/v/@pify/cli)](https://www.npmjs.com/package/@pify/cli) [![npm downloads](https://img.shields.io/npm/dm/@pify/cli)](https://www.npmjs.com/package/@pify/cli)
+[![CI](https://github.com/pifydev/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/pifydev/cli/actions/workflows/ci.yml) [![npm version](https://img.shields.io/npm/v/@pify/cli)](https://www.npmjs.com/package/@pify/cli) [![npm downloads](https://img.shields.io/npm/dm/@pify/cli)](https://www.npmjs.com/package/@pify/cli)
 
 Front door for the [Pify](https://github.com/pifydev) suite: install and update the [pi coding agent](https://github.com/earendil-works/pi), manage the `@pify/*` extension packages with short names, and scaffold new Pi Packages.
 
