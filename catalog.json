@@ -1,5 +1,5 @@
 {
-  "version": 25,
+  "version": 26,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -56,6 +56,13 @@
         "pi-pretty-tui",
         "pi-tool-display"
       ]
+    },
+    {
+      "name": "recall",
+      "npm": "@pify/recall",
+      "repo": "https://github.com/pifydev/recall",
+      "description": "Full-text search across your past pi sessions: a session_search tool over the local session logs",
+      "status": "published"
     },
     {
       "name": "search",
@@ -146,6 +153,7 @@
         "memory",
         "plan-mode",
         "pretty",
+        "recall",
         "search",
         "shell-background",
         "skills",
