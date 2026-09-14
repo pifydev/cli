@@ -1,5 +1,5 @@
 {
-  "version": 29,
+  "version": 30,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -75,7 +75,9 @@
         "pi-pretty",
         "pi-pretty-tui",
         "pi-tool-display",
-        "pi-rtk-optimizer"
+        "pi-rtk-optimizer",
+        "pi-claude-code-ui",
+        "pi-compact-ui"
       ]
     },
     {
