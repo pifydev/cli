@@ -1,5 +1,5 @@
 {
-  "version": 28,
+  "version": 29,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -30,7 +30,13 @@
       "npm": "@pify/compact",
       "repo": "https://github.com/pifydev/compact",
       "description": "Proactive auto-compaction: compact between turns when the context window crosses a threshold",
-      "status": "published"
+      "status": "published",
+      "conflicts": [
+        "pi-auto-compact",
+        "@capyup/pi-auto-compact",
+        "@loka1/pi-auto-compact",
+        "@sting8k/pi-vcc"
+      ]
     },
     {
       "name": "goal",
@@ -63,12 +69,13 @@
       "name": "pretty",
       "npm": "@pify/pretty",
       "repo": "https://github.com/pifydev/pretty",
-      "description": "Compact theme-aware rendering for built-in tools: summaries, highlighted reads, word-level diff emphasis",
+      "description": "Compact theme-aware rendering for built-in tools: summaries, highlighted reads, word-level diffs, pre-apply diff previews",
       "status": "published",
       "conflicts": [
         "pi-pretty",
         "pi-pretty-tui",
-        "pi-tool-display"
+        "pi-tool-display",
+        "pi-rtk-optimizer"
       ]
     },
     {
