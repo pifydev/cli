@@ -1,5 +1,5 @@
 {
-  "version": 26,
+  "version": 27,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -16,6 +16,13 @@
       "npm": "@pify/btw",
       "repo": "https://github.com/pifydev/btw",
       "description": "By-the-way side conversations: a read-only, codebase-aware side agent in a widget, out of the main context",
+      "status": "published"
+    },
+    {
+      "name": "compact",
+      "npm": "@pify/compact",
+      "repo": "https://github.com/pifydev/compact",
+      "description": "Proactive auto-compaction: compact between turns when the context window crosses a threshold",
       "status": "published"
     },
     {
@@ -149,6 +156,7 @@
       "packages": [
         "ask-question",
         "btw",
+        "compact",
         "goal",
         "memory",
         "plan-mode",

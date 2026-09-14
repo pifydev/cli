@@ -65,6 +65,7 @@ pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
 |---|---|
 | `@pify/ask-question` | Structured questions on built-in dialogs: 1-4 questions, multi-select, Other free-text |
 | `@pify/btw` | By-the-way side conversations: a read-only, codebase-aware side agent |
+| `@pify/compact` | Proactive auto-compaction when the context window crosses a threshold |
 | `@pify/goal` | Pin a session goal and keep the agent anchored to it |
 | `@pify/memory` | Persistent memory across pi sessions |
 | `@pify/plan-mode` | Read-only planning mode with approve-then-execute gate |
