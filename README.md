@@ -64,6 +64,7 @@ pify completions powershell | Out-String | Invoke-Expression   # add to $PROFILE
 | Package | Description |
 |---|---|
 | `@pify/ask-question` | Structured questions on built-in dialogs: 1-4 questions, multi-select, Other free-text |
+| `@pify/autopilot` | Let the main agent keep going on its own between turns — opt-in, hard-capped |
 | `@pify/btw` | By-the-way side conversations: a read-only, codebase-aware side agent |
 | `@pify/compact` | Proactive auto-compaction when the context window crosses a threshold |
 | `@pify/goal` | Pin a session goal and keep the agent anchored to it |

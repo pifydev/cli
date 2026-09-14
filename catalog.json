@@ -1,5 +1,5 @@
 {
-  "version": 27,
+  "version": 28,
   "org": "pifydev",
   "scope": "@pify",
   "remote": "https://raw.githubusercontent.com/pifydev/cli/main/catalog.json",
@@ -9,6 +9,13 @@
       "npm": "@pify/ask-question",
       "repo": "https://github.com/pifydev/ask-question",
       "description": "Structured questions on built-in dialogs: 1-4 questions, options with trade-offs, multi-select, Other free-text",
+      "status": "published"
+    },
+    {
+      "name": "autopilot",
+      "npm": "@pify/autopilot",
+      "repo": "https://github.com/pifydev/autopilot",
+      "description": "Let the main agent keep going on its own between turns — opt-in, hard-capped, never over your head",
       "status": "published"
     },
     {
@@ -155,6 +162,7 @@
       "description": "Every published @pify extension",
       "packages": [
         "ask-question",
+        "autopilot",
         "btw",
         "compact",
         "goal",
