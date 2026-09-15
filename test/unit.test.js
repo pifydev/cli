@@ -326,6 +326,49 @@ test("v0.4 planApply says what would change and never proposes a removal", () =>
   );
 });
 
+test("v0.4 planApply threads the recorded scope through every row", () => {
+  // The scope on install/change/keep rows is the profile entry's scope — it
+  // never depends on disk state, so this is deterministic. Regression: apply
+  // used to drop the scope and install project packages into the user scope.
+  const profile = {
+    version: 1,
+    createdAt: "",
+    packages: [
+      { name: "goal", version: null, scope: "project" },
+      { name: "btw", version: null, scope: "user" },
+    ],
+  };
+  const rows = planApply(profile, new Map());
+  const byName = new Map(rows.map((r) => [r.name, r]));
+
+  // Absent packages install into the scope the profile recorded.
+  assert.equal(byName.get("goal").action, "install");
+  assert.equal(byName.get("goal").scope, "project", "project scope must survive to the plan row");
+  assert.equal(byName.get("btw").action, "install");
+  assert.equal(byName.get("btw").scope, "user");
+});
+
+test("v0.4 planApply reports a user↔project scope move as a change", () => {
+  // A package installed in one scope but recorded in the other must be a
+  // "change" (reinstall into the recorded scope), even at the same version.
+  const profile = {
+    version: 1,
+    createdAt: "",
+    packages: [{ name: "goal", version: null, scope: "project" }],
+  };
+  // Installed in the user scope; the profile wants it in the project scope.
+  const installed = new Map([["goal", { scope: "user" }]]);
+  const rows = planApply(profile, installed);
+  const goal = rows.find((r) => r.name === "goal");
+
+  assert.equal(goal.action, "change", "a scope mismatch is a change, not a keep");
+  assert.equal(goal.scope, "project", "the change targets the recorded scope");
+
+  // Same package, same scope on both sides, no version pin -> nothing to move.
+  const matched = planApply(profile, new Map([["goal", { scope: "project" }]]));
+  assert.equal(matched.find((r) => r.name === "goal").action, "keep");
+});
+
 test("v0.4 the catalog declares conflicts, and only npm-shaped names", () => {
   const catalog = loadBundledCatalog();
   const withConflicts = catalog.packages.filter((p) => p.conflicts?.length);

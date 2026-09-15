@@ -36,19 +36,22 @@ export function piStatus(): PiStatus {
 /** Latest pi version from pi's own release endpoint. Null offline/on error. */
 export async function fetchLatestPiVersion(): Promise<string | null> {
   if (isOffline()) return null;
+  const controller = new AbortController();
+  // Cleared in finally so a settled request (resolved or rejected) never keeps
+  // the event loop alive for the full timeout.
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(LATEST_VERSION_URL, {
       signal: controller.signal,
       headers: { "user-agent": `pify/${VERSION}` },
     });
-    clearTimeout(timer);
     if (!res.ok) return null;
     const data = (await res.json()) as { version?: unknown };
     return typeof data.version === "string" ? data.version : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -392,20 +395,23 @@ export interface OnDiskState {
  */
 export async function fetchLatestPackageVersion(name: string): Promise<string | null> {
   if (isOffline()) return null;
+  const controller = new AbortController();
+  // Cleared in finally so a settled request (resolved or rejected) never keeps
+  // the event loop alive for the full timeout.
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(`https://registry.npmjs.org/@pify/${encodeURIComponent(name)}/latest`, {
       signal: controller.signal,
       headers: { "user-agent": `pify/${VERSION}`, accept: "application/json" },
       redirect: "error",
     });
-    clearTimeout(timer);
     if (!res.ok) return null;
     const data = (await res.json()) as { version?: unknown };
     return typeof data.version === "string" ? data.version : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

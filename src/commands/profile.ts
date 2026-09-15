@@ -86,6 +86,13 @@ export interface PlanRow {
   action: PlanAction;
   from: string | null;
   to: string | null;
+  /**
+   * Where the package should end up. For install/change/keep this is the
+   * profile entry's recorded scope, so applying installs into the same scope it
+   * was saved from (project scope needs pi's `-l`). For `extra` rows there is
+   * no profile entry, so it reflects where the package is currently installed.
+   */
+  scope: "user" | "project";
 }
 
 /**
@@ -99,19 +106,23 @@ export function planApply(profile: Profile, installedNow: Map<string, { scope: "
   for (const entry of profile.packages) {
     const current = installedNow.get(entry.name);
     if (!current) {
-      rows.push({ name: entry.name, action: "install", from: null, to: entry.version });
+      rows.push({ name: entry.name, action: "install", from: null, to: entry.version, scope: entry.scope });
       continue;
     }
     const onDisk = installedVersionOnDisk(entry.name, current.scope).version;
-    if (entry.version && onDisk && entry.version !== onDisk) {
-      rows.push({ name: entry.name, action: "change", from: onDisk, to: entry.version });
+    // A user↔project mismatch is a change even at the same version: the package
+    // has to be reinstalled into the scope the profile recorded.
+    const scopeMismatch = current.scope !== entry.scope;
+    const versionMismatch = Boolean(entry.version && onDisk && entry.version !== onDisk);
+    if (scopeMismatch || versionMismatch) {
+      rows.push({ name: entry.name, action: "change", from: onDisk, to: entry.version, scope: entry.scope });
     } else {
-      rows.push({ name: entry.name, action: "keep", from: onDisk, to: entry.version });
+      rows.push({ name: entry.name, action: "keep", from: onDisk, to: entry.version, scope: entry.scope });
     }
   }
-  for (const [name] of installedNow) {
+  for (const [name, cur] of installedNow) {
     if (!profile.packages.some((p) => p.name === name)) {
-      rows.push({ name, action: "extra", from: installedVersionOnDisk(name, "user").version, to: null });
+      rows.push({ name, action: "extra", from: installedVersionOnDisk(name, cur.scope).version, to: null, scope: cur.scope });
     }
   }
   return rows.sort((a, b) => a.name.localeCompare(b.name));
@@ -123,13 +134,14 @@ export interface ProfileOptions {
 }
 
 function describe(row: PlanRow): string {
+  const scope = row.scope === "project" ? " [project]" : "";
   switch (row.action) {
     case "install":
-      return `install ${row.to ? `@ ${row.to}` : "(latest)"}`;
+      return `install ${row.to ? `@ ${row.to}` : "(latest)"}${scope}`;
     case "change":
-      return `${row.from} → ${row.to}`;
+      return `${row.from ?? "unknown"} → ${row.to ?? "latest"}${scope}`;
     case "keep":
-      return `already ${row.from ?? "installed"}`;
+      return `already ${row.from ?? "installed"}${scope}`;
     case "extra":
       return `installed here, not in the profile (left alone)`;
   }
@@ -189,6 +201,9 @@ export async function profile(args: string[], opts: ProfileOptions): Promise<num
     for (const row of work) {
       const spec = row.to ? `npm:@pify/${row.name}@${row.to}` : `npm:@pify/${row.name}`;
       const argv = ["install", spec];
+      // Mirror install.ts's piArgs: project-scoped entries need pi's `-l`, or
+      // they land in the user scope instead of the one the profile recorded.
+      if (row.scope === "project") argv.push("-l");
       step(`pi ${argv.join(" ")}`);
       if ((await delegate(argv)) !== 0) failed.push(row.name);
     }

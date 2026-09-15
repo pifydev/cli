@@ -170,16 +170,19 @@ export async function refreshCatalog(): Promise<{ ok: boolean; catalog: Catalog 
 async function fetchRemoteCatalog(defaultUrl: string, timeoutMs: number): Promise<Catalog | null> {
   if (isOffline()) return null;
   const url = process.env.PIFY_CATALOG_URL || defaultUrl;
+  const controller = new AbortController();
+  // Cleared in finally so a settled request (resolved or rejected) never keeps
+  // the event loop alive for the full timeout.
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
     if (!res.ok) return null;
     const data: unknown = await res.json();
     return validateCatalog(data) ? data : null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
