@@ -5,6 +5,8 @@
 export { VERSION } from "./version.js";
 export { parseProfile, planApply, buildProfile } from "./commands/profile.js";
 export type { Profile, ProfileEntry, PlanRow } from "./commands/profile.js";
+export { checkUpdates } from "./commands/update.js";
+export type { UpdateStatus, UpdateReport, CheckUpdatesDeps } from "./commands/update.js";
 export {
   loadCatalog,
   loadBundledCatalog,

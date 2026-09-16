@@ -13,6 +13,7 @@ import {
   parseInstallSpec,
   resolveInstallTarget,
   resolvePifyName,
+  checkUpdates,
   assertSafeArg,
   interpolate,
   packageJsonTemplate,
@@ -92,6 +93,77 @@ test("validateCatalog rejects out-of-scope npm names", () => {
   const badVersion = structuredClone(good);
   badVersion.version = "1";
   assert.equal(validateCatalog(badVersion), false);
+});
+
+test("f009 validateCatalog rejects terminal escapes and non-string metadata", () => {
+  const good = loadBundledCatalog();
+  // The bundled catalog (descriptions up to ~230 chars) must still validate.
+  assert.ok(validateCatalog(good));
+
+  // An ESC/OSC sequence smuggled into a description is rejected.
+  const escDesc = structuredClone(good);
+  escDesc.packages[0].description = "]0;pwned[2K hi";
+  assert.equal(validateCatalog(escDesc), false);
+
+  // A non-string description is rejected (used to print as null/[object Object]).
+  const nullDesc = structuredClone(good);
+  nullDesc.packages[0].description = null;
+  assert.equal(validateCatalog(nullDesc), false);
+
+  // A repo outside the org's GitHub space is rejected (it feeds the "Track it
+  // at <repo>" hint).
+  const badRepo = structuredClone(good);
+  badRepo.packages[0].repo = "https://evil.example/pifydev/x";
+  assert.equal(validateCatalog(badRepo), false);
+
+  // org/scope must be plain identifiers, not arbitrary values.
+  const badOrg = structuredClone(good);
+  badOrg.org = { evil: 1 };
+  assert.equal(validateCatalog(badOrg), false);
+
+  // The extra sink: a bundle description also reaches the terminal.
+  const bundleEsc = structuredClone(good);
+  bundleEsc.bundles[0].description = "[2K wipe";
+  assert.equal(validateCatalog(bundleEsc), false);
+});
+
+test("f007 checkUpdates reports pinned packages as pinned, not outdated", async () => {
+  const report = await checkUpdates({
+    installed: new Map([
+      ["goal", { name: "goal", scope: "user", source: "npm:@pify/goal@0.4.0", pin: "0.4.0" }],
+      ["btw", { name: "btw", scope: "user", source: "npm:@pify/btw", pin: null }],
+    ]),
+    versionOnDisk: (name) => ({ present: true, version: name === "goal" ? "0.4.0" : "0.3.0" }),
+    latestPackage: async (name) => (name === "goal" ? "0.5.0" : "0.4.0"),
+    piVersion: "0.84.4",
+    latestPi: async () => "0.84.4",
+  });
+  const byName = new Map(report.packages.map((p) => [p.name, p]));
+
+  // A pinned package behind the registry is "pinned" (re-pin), never "outdated".
+  assert.equal(byName.get("goal").state, "pinned");
+  assert.equal(byName.get("goal").latest, "0.5.0");
+  // An unpinned package behind the registry is still "outdated".
+  assert.equal(byName.get("btw").state, "outdated");
+  // The "can be updated" count excludes pinned packages.
+  assert.equal(report.packages.filter((s) => s.state === "outdated").length, 1);
+});
+
+test("f008 checkUpdates includes a pi row with the right state", async () => {
+  const piState = async (piVersion, latest) => {
+    const report = await checkUpdates({
+      installed: new Map(),
+      piVersion,
+      latestPi: async () => latest,
+    });
+    assert.equal(report.pi.name, "pi");
+    assert.equal(report.pi.pin, null);
+    return report.pi.state;
+  };
+  assert.equal(await piState("0.84.4", "0.85.1"), "outdated");
+  assert.equal(await piState("0.85.1", "0.85.1"), "current");
+  assert.equal(await piState(null, "0.85.1"), "missing"); // pi not installed
+  assert.equal(await piState("0.84.4", null), "unknown"); // registry unreachable
 });
 
 test("parseInstallSpec splits base and pin", () => {

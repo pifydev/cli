@@ -63,16 +63,33 @@ export function loadBundledCatalog(): Catalog {
  * `npm:@pify/...` specs are ever delegated to pi, this bounds the blast
  * radius of a compromised remote to "packages the org itself published".
  */
+// Free text that reaches the terminal (list descriptions, the "Track it at
+// <repo>" hint, bundle blurbs) must not carry control or escape sequences: a
+// compromised catalog source could otherwise rewrite the title, move the
+// cursor, or mask a URL via OSC hyperlinks. Generous length cap — the bundled
+// catalog's descriptions already run past 200 chars, and this gate must not
+// reject the catalog we ship.
+const CLEAN_TEXT = /^[^\x00-\x1f\x7f]{1,500}$/;
+// pify's own org space, so the "Track it at <repo>" hint can never point a user
+// at an attacker-controlled URL.
+const CATALOG_REPO = /^https:\/\/github\.com\/pifydev\/[A-Za-z0-9._-]+$/;
+// org/scope render verbatim in the list header; keep them boring identifiers.
+const CATALOG_IDENT = /^[@a-z0-9-]+$/;
+
 export function validateCatalog(data: unknown): data is Catalog {
   if (typeof data !== "object" || data === null) return false;
   const c = data as Record<string, unknown>;
   if (!Number.isInteger(c.version)) return false;
+  if (typeof c.org !== "string" || !CATALOG_IDENT.test(c.org)) return false;
+  if (typeof c.scope !== "string" || !CATALOG_IDENT.test(c.scope)) return false;
   if (!Array.isArray(c.packages)) return false;
   for (const entry of c.packages) {
     if (typeof entry !== "object" || entry === null) return false;
     const p = entry as Record<string, unknown>;
     if (typeof p.name !== "string" || !/^[a-z0-9-]+$/.test(p.name)) return false;
     if (typeof p.npm !== "string" || !p.npm.startsWith("@pify/")) return false;
+    if (typeof p.description !== "string" || !CLEAN_TEXT.test(p.description)) return false;
+    if (typeof p.repo !== "string" || !CATALOG_REPO.test(p.repo)) return false;
     if (p.status !== "published" && p.status !== "planned") return false;
     if (p.conflicts !== undefined) {
       if (!Array.isArray(p.conflicts)) return false;
@@ -93,7 +110,8 @@ export function validateCatalog(data: unknown): data is Catalog {
       if (typeof entry !== "object" || entry === null) return false;
       const b = entry as Record<string, unknown>;
       if (typeof b.name !== "string" || !/^[a-z0-9-]+$/.test(b.name)) return false;
-      if (typeof b.description !== "string") return false;
+      // `pify install <bundle>` echoes this blurb, so it is a terminal sink too.
+      if (typeof b.description !== "string" || !CLEAN_TEXT.test(b.description)) return false;
       if (!Array.isArray(b.packages) || b.packages.length === 0) return false;
       for (const member of b.packages) {
         if (typeof member !== "string" || !known.has(member)) return false;

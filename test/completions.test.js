@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import {
   generateCompletion,
   COMMAND_SPECS,
@@ -8,6 +9,19 @@ import {
   loadBundledCatalog,
   PifyError,
 } from "../dist/index.js";
+
+/** The first working PowerShell on PATH, or null on a box without one. */
+function powershellBin() {
+  for (const bin of ["pwsh", "powershell"]) {
+    try {
+      const r = spawnSync(bin, ["-NoProfile", "-Command", "exit 0"], { encoding: "utf8" });
+      if (r.status === 0) return bin;
+    } catch {
+      // not installed / not on PATH
+    }
+  }
+  return null;
+}
 
 test("every shell script embeds all commands, aliases, flags, and packages", () => {
   const packages = loadBundledCatalog().packages.map((p) => p.name);
@@ -69,4 +83,32 @@ test("bash and zsh scripts are eval-shaped (function + registration)", () => {
   assert.ok(fish.includes("complete -c pify -f"));
   const ps = generateCompletion("powershell");
   assert.ok(ps.includes("Register-ArgumentCompleter -Native -CommandName pify"));
+});
+
+test("f006 powershell script has no adjacent bare string clauses and evaluates cleanly", (t) => {
+  const ps = generateCompletion("powershell");
+  // Structural guard that runs on every platform (so Linux CI catches it too):
+  // PowerShell's switch grammar is <condition> <block>, so two bare string
+  // literals before a block ('install' 'i' { … }) is a parse error that aborts
+  // the whole Invoke-Expression. Aliased commands must use a scriptblock
+  // condition instead.
+  assert.doesNotMatch(
+    ps,
+    /'[^']*'[ \t]+'[^']*'[ \t]*\{/,
+    "switch clauses must not place adjacent bare string literals before a block",
+  );
+
+  const bin = powershellBin();
+  if (!bin) {
+    t.skip("no PowerShell on PATH");
+    return;
+  }
+  // The README's own install path: pipe the script into Invoke-Expression and
+  // require a clean parse+run, so Register-ArgumentCompleter actually registers.
+  const res = spawnSync(
+    bin,
+    ["-NoProfile", "-Command", "$input | Out-String | Invoke-Expression; if (-not $?) { exit 1 }"],
+    { input: ps, encoding: "utf8" },
+  );
+  assert.equal(res.status, 0, `${bin} exited ${res.status}: ${res.stderr}`);
 });
