@@ -22,7 +22,7 @@ npx @pify/cli setup
 
 ```
 pify setup                 # install the pi coding agent (safe to re-run)
-pify setup --pi-version 0.85.1   # pin the version your team has tested
+pify setup --pi-version 0.87.0   # pin the version your team has tested
 pify setup --installer     # run pi's official interactive installer (ps1/sh)
 pify list                  # show the @pify catalog with install state
 pify install goal task     # short names resolve to @pify/goal, @pify/task
