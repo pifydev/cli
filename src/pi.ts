@@ -13,7 +13,7 @@ export const PI_PACKAGE = "@earendil-works/pi-coding-agent";
 export const NODE_FLOOR = "22.19.0";
 
 /** The pi version this CLI release was developed and tested against. */
-export const TESTED_PI_VERSION = "0.87.0";
+export const TESTED_PI_VERSION = "0.87.1";
 
 const LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
 
