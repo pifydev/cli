@@ -44,6 +44,9 @@ jobs:
   upstream-drift:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,7 +56,42 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Install latest pi and smoke pify against it
+        id: smoke
+        continue-on-error: true
         run: |
           node dist/cli.js setup
           node dist/cli.js doctor
           node dist/cli.js update --dry-run
+      - name: Compare the tested pi against the latest, open an issue on drift or a failed smoke
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TESTED=$(grep -oE 'TESTED_PI_VERSION = "[^"]+"' src/pi.ts | grep -oE '[0-9][^"]*')
+          LATEST=$(npm view @earendil-works/pi-coding-agent version)
+          SMOKE='${{ steps.smoke.outcome }}'
+          echo "tested=$TESTED latest=$LATEST smoke=$SMOKE"
+          DRIFT=0
+          [ "$TESTED" != "$LATEST" ] && DRIFT=1
+          if [ "$DRIFT" = "0" ] && [ "$SMOKE" = "success" ]; then
+            echo "No drift and the smoke passed — nothing to report."
+            exit 0
+          fi
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ "$DRIFT" = "1" ]; then
+            NOTE="A newer pi is published than the one this CLI pins. Run _review/verify-pi.sh against $LATEST, then bump TESTED_PI_VERSION once the suite is green and tag the release."
+          else
+            NOTE="The pinned pi ($TESTED) smoke-failed (setup / doctor / update --dry-run). Investigate before the next release."
+          fi
+          TITLE="pi upstream drift: tested $TESTED, latest $LATEST"
+          BODY=$(printf 'Weekly upstream-drift check.\n\n- tested (TESTED_PI_VERSION): `%s`\n- latest on npm (@earendil-works/pi-coding-agent): `%s`\n- smoke (setup / doctor / update --dry-run): **%s**\n\n%s\n\nWorkflow run: %s' "$TESTED" "$LATEST" "$SMOKE" "$NOTE" "$RUN_URL")
+          # Idempotent: update the one open drift issue in place rather than opening a new one each week (caveman's drift-report pattern).
+          EXISTING=$(gh issue list --state open --search 'pi upstream drift in:title' --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue edit "$EXISTING" --title "$TITLE" --body "$BODY"
+            echo "updated #$EXISTING"
+          else
+            gh issue create --title "$TITLE" --body "$BODY" --label upstream-drift 2>/dev/null \
+              || gh issue create --title "$TITLE" --body "$BODY"
+            echo "opened a new drift issue"
+          fi
